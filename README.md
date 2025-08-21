@@ -4,8 +4,7 @@ Sistema inteligente para análise e detecção de fake news utilizando análise 
 
 ```bash
 # Clone o repositório
-git clone <seu-repositorio>
-cd FakeNews-Detector
+git clone
 
 # Configure e execute
 cp backend/env.config backend/.env
