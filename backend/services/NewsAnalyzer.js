@@ -10,6 +10,7 @@ export class NewsAnalyzer {
     constructor(trustGraph) {
         this.trustGraph = trustGraph;
         this.urlCache = new Map(); // Hash Table para cache de URLs
+        this.externalAnalyzer = new ExternalSourceAnalyzer(); // Instanciar o analisador externo
     }
 
     /**
@@ -71,10 +72,10 @@ export class NewsAnalyzer {
                     const title = text ? text.split('\n')[0].substring(0, 100) : '';
 
                     // Analisar fonte externa
-                    const externalSource = await ExternalSourceAnalyzer.analyzeExternalSource(url, title, text);
+                    const externalSource = await this.externalAnalyzer.analyzeExternalSource(url, title, text);
 
                     // Adicionar ao banco de dados
-                    const sourceId = await ExternalSourceAnalyzer.addSourceToDatabase(externalSource);
+                    const sourceId = await this.externalAnalyzer.addSourceToDatabase(externalSource);
 
                     // Buscar a fonte completa do banco
                     const fonteResult = await query('SELECT * FROM fontes WHERE id = $1', [sourceId]);
