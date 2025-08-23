@@ -1,90 +1,132 @@
 "use client"
 
 import { useState } from "react"
-import { Search, AlertTriangle, CheckCircle, XCircle, Loader, FileText } from "lucide-react"
+import { Search, AlertTriangle, CheckCircle, XCircle, Loader, FileText, Globe, Brain } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import toast from "react-hot-toast"
-import { api } from "../services/api"
+import { contentAnalysisAPI, sourceAnalysisAPI } from "../services/api"
 
 export default function NewsAnalysis() {
-  const [newsData, setNewsData] = useState({
-    title: "",
-    content: "",
-    url: "",
-    author: "",
-    sources: [],
-  })
-  const [analysis, setAnalysis] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState({})
-  const [showErrors, setShowErrors] = useState(false)
+  const [activeTab, setActiveTab] = useState('content') // 'content' ou 'source'
 
-  const handleInputChange = (field, value) => {
-    setNewsData((prev) => ({
+  // Estados para análise de conteúdo
+  const [contentData, setContentData] = useState({
+    title: "",
+    content: ""
+  })
+  const [contentAnalysis, setContentAnalysis] = useState(null)
+  const [contentLoading, setContentLoading] = useState(false)
+  const [contentErrors, setContentErrors] = useState({})
+  const [showContentErrors, setShowContentErrors] = useState(false)
+
+  // Estados para análise de fonte
+  const [sourceData, setSourceData] = useState({
+    url: ""
+  })
+  const [sourceAnalysis, setSourceAnalysis] = useState(null)
+  const [sourceLoading, setSourceLoading] = useState(false)
+  const [sourceErrors, setSourceErrors] = useState({})
+  const [showSourceErrors, setShowSourceErrors] = useState(false)
+
+  // Handlers para análise de conteúdo
+  const handleContentInputChange = (field, value) => {
+    setContentData((prev) => ({
       ...prev,
       [field]: value,
     }))
 
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
+    if (contentErrors[field]) {
+      setContentErrors(prev => ({
         ...prev,
         [field]: null
       }))
     }
   }
 
-  const validateForm = () => {
+  const validateContentForm = () => {
     const newErrors = {}
 
-    // Required fields
-    if (!newsData.title.trim()) {
+    if (!contentData.title.trim()) {
       newErrors.title = "Título é obrigatório"
     }
-    if (!newsData.content.trim()) {
+    if (!contentData.content.trim()) {
       newErrors.content = "Conteúdo é obrigatório"
     }
-    if (!newsData.url.trim()) {
-      newErrors.url = "URL é obrigatória"
+    if (contentData.content.trim().length < 20) {
+      newErrors.content = "Conteúdo deve ter pelo menos 20 caracteres"
     }
 
-    // Author is optional, no validation needed
-
-    setErrors(newErrors)
+    setContentErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const analyzeNews = async () => {
-    setShowErrors(true)
+  const analyzeContent = async () => {
+    setShowContentErrors(true)
 
-    if (!validateForm()) {
+    if (!validateContentForm()) {
       toast.error("Preencha os campos obrigatórios")
       return
     }
 
-    setLoading(true)
+    setContentLoading(true)
     try {
-      // Preparar dados da requisição, omitindo autor se estiver vazio
-      const requestData = {
-        title: newsData.title,
-        content: newsData.content,
-        url: newsData.url
-      }
-
-      // Só incluir autor se não estiver vazio
-      if (newsData.author.trim()) {
-        requestData.author = newsData.author.trim()
-      }
-
-      const response = await api.post("/api/analysis", requestData)
-
-      setAnalysis(response.data)
-      toast.success("Análise concluída!")
+      const response = await contentAnalysisAPI.analyze(contentData)
+      setContentAnalysis(response.data)
+      toast.success("Análise de conteúdo concluída!")
     } catch (error) {
-      console.error("Error analyzing news:", error)
-      toast.error("Erro ao analisar notícia")
+      console.error("Error analyzing content:", error)
+      toast.error("Erro ao analisar conteúdo")
     } finally {
-      setLoading(false)
+      setContentLoading(false)
+    }
+  }
+
+  // Handlers para análise de fonte
+  const handleSourceInputChange = (field, value) => {
+    setSourceData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+
+    if (sourceErrors[field]) {
+      setSourceErrors(prev => ({
+        ...prev,
+        [field]: null
+      }))
+    }
+  }
+
+  const validateSourceForm = () => {
+    const newErrors = {}
+
+    if (!sourceData.url.trim()) {
+      newErrors.url = "URL é obrigatória"
+    } else if (!sourceData.url.startsWith('http')) {
+      newErrors.url = "URL deve começar com http:// ou https://"
+    }
+
+    setSourceErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const analyzeSource = async () => {
+    setShowSourceErrors(true)
+
+    if (!validateSourceForm()) {
+      toast.error("Preencha os campos obrigatórios")
+      return
+    }
+
+    setSourceLoading(true)
+    try {
+      const response = await sourceAnalysisAPI.analyze(sourceData)
+      setSourceAnalysis(response.data)
+      toast.success("Análise de fonte concluída!")
+    } catch (error) {
+      console.error("Error analyzing source:", error)
+      toast.error("Erro ao analisar fonte")
+    } finally {
+      setSourceLoading(false)
     }
   }
 
@@ -114,17 +156,64 @@ export default function NewsAnalysis() {
     }
   }
 
-  const clearForm = () => {
-    setNewsData({
+  const translateSourceType = (sourceType) => {
+    switch (sourceType) {
+      case 'reliable':
+        return 'Confiável'
+      case 'moderate':
+        return 'Moderado'
+      case 'suspicious':
+        return 'Suspeito'
+      case 'general':
+        return 'Geral'
+      default:
+        return 'Geral'
+    }
+  }
+
+  const translateRiskLevel = (riskLevel) => {
+    switch (riskLevel) {
+      case 'low':
+        return 'Baixo'
+      case 'medium':
+        return 'Médio'
+      case 'high':
+        return 'Alto'
+      default:
+        return 'Médio'
+    }
+  }
+
+  const formatDomainAge = (domainAge) => {
+    if (!domainAge || domainAge === 'Não disponível' || domainAge.includes('content') || domainAge.includes('width')) {
+      return 'Não disponível'
+    }
+
+    // Se contém números, provavelmente é uma idade válida
+    if (/\d/.test(domainAge)) {
+      return domainAge
+    }
+
+    return 'Não disponível'
+  }
+
+  const clearContentForm = () => {
+    setContentData({
       title: "",
-      content: "",
-      url: "",
-      author: "",
-      sources: [],
+      content: ""
     })
-    setAnalysis(null)
-    setErrors({})
-    setShowErrors(false)
+    setContentAnalysis(null)
+    setContentErrors({})
+    setShowContentErrors(false)
+  }
+
+  const clearSourceForm = () => {
+    setSourceData({
+      url: ""
+    })
+    setSourceAnalysis(null)
+    setSourceErrors({})
+    setShowSourceErrors(false)
   }
 
   return (
@@ -132,202 +221,373 @@ export default function NewsAnalysis() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Análise de Notícias</h1>
-        <p className="mt-2 text-gray-600">Insira os dados da notícia para verificar sua credibilidade</p>
+        <p className="mt-2 text-gray-600">Analise o conteúdo de notícias ou a credibilidade de fontes</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Form */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Dados da Notícia</h2>
-          <p className="text-sm text-gray-600 mb-4">* Campos obrigatórios</p>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Título da Notícia *</label>
-              <input
-                type="text"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${showErrors && errors.title
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300'
-                  }`}
-                placeholder="Digite o título da notícia..."
-                value={newsData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-              />
-              {showErrors && errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Conteúdo *</label>
-              <textarea
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${showErrors && errors.content
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300'
-                  }`}
-                placeholder="Cole o conteúdo da notícia aqui..."
-                value={newsData.content}
-                onChange={(e) => handleInputChange("content", e.target.value)}
-              />
-              {showErrors && errors.content && (
-                <p className="mt-1 text-sm text-red-600">{errors.content}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">URL da Notícia *</label>
-                <input
-                  type="url"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${showErrors && errors.url
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300'
-                    }`}
-                  placeholder="https://..."
-                  value={newsData.url}
-                  onChange={(e) => handleInputChange("url", e.target.value)}
-                />
-                {showErrors && errors.url && (
-                  <p className="mt-1 text-sm text-red-600">{errors.url}</p>
-                )}
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+        <div className="p-2">
+          <nav className="flex bg-gray-50 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 ${activeTab === 'content'
+                ? 'bg-white text-blue-600 shadow-sm border border-blue-100'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                }`}
+            >
+              <div className={`p-2 rounded-full mr-3 transition-all duration-200 ${activeTab === 'content' ? 'bg-blue-100' : 'bg-gray-200'
+                }`}>
+                <Brain className={`h-5 w-5 ${activeTab === 'content' ? 'text-blue-600' : 'text-gray-500'
+                  }`} />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Autor (Opcional)</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nome do autor"
-                  value={newsData.author}
-                  onChange={(e) => handleInputChange("author", e.target.value)}
-                />
+              <span className="font-semibold">Análise de Conteúdo</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('source')}
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 ${activeTab === 'source'
+                ? 'bg-white text-green-600 shadow-sm border border-green-100'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                }`}
+            >
+              <div className={`p-2 rounded-full mr-3 transition-all duration-200 ${activeTab === 'source' ? 'bg-green-100' : 'bg-gray-200'
+                }`}>
+                <Globe className={`h-5 w-5 ${activeTab === 'source' ? 'text-green-600' : 'text-gray-500'
+                  }`} />
               </div>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={analyzeNews}
-                disabled={loading}
-                className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <Loader className="animate-spin h-4 w-4 mr-2" />
-                    Analisando...
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4 mr-2" />
-                    Analisar Notícia
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={clearForm}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Limpar
-              </button>
-            </div>
-          </div>
+              <span className="font-semibold">Análise de Fonte</span>
+            </button>
+          </nav>
         </div>
 
-        {/* Analysis Results */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Resultado da Análise</h2>
-
+        <div className="p-6">
           <AnimatePresence mode="wait">
-            {loading ? (
+            {activeTab === 'content' ? (
               <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-12"
+                key="content"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
               >
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                <p className="text-gray-600">Processando análise...</p>
-              </motion.div>
-            ) : analysis ? (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
-              >
-                {/* Risk Level */}
-                <div className={`p-4 rounded-lg border-2 ${getRiskColor(analysis.riskLevel)}`}>
-                  <div className="flex items-center">
-                    {getRiskIcon(analysis.riskLevel)}
-                    <div className="ml-3">
-                      <h3 className="text-lg font-semibold">
-                        {analysis.riskLevel === "ALTO"
-                          ? "Alto Risco de Fake News"
-                          : analysis.riskLevel === "MÉDIO"
-                            ? "Risco Moderado"
-                            : "Baixo Risco - Aparenta ser Confiável"}
-                      </h3>
-                      <p className="text-sm opacity-75">
-                        Pontuação: {analysis.score ? (analysis.score * 100).toFixed(1) : 'N/A'}%
-                      </p>
+                {/* Content Analysis Form */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 shadow-sm">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                      <Brain className="h-6 w-6 text-blue-600" />
+                    </div>
+                    Análise de Conteúdo com IA
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4">Analise o conteúdo da notícia usando inteligência artificial</p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Título da Notícia *</label>
+                      <input
+                        type="text"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${showContentErrors && contentErrors.title
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300'
+                          }`}
+                        placeholder="Digite o título da notícia..."
+                        value={contentData.title}
+                        onChange={(e) => handleContentInputChange("title", e.target.value)}
+                      />
+                      {showContentErrors && contentErrors.title && (
+                        <p className="mt-1 text-sm text-red-600">{contentErrors.title}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Conteúdo da Notícia *</label>
+                      <textarea
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-40 resize-none ${showContentErrors && contentErrors.content
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300'
+                          }`}
+                        placeholder="Cole o conteúdo da notícia aqui..."
+                        value={contentData.content}
+                        onChange={(e) => handleContentInputChange("content", e.target.value)}
+                      />
+                      {showContentErrors && contentErrors.content && (
+                        <p className="mt-1 text-sm text-red-600">{contentErrors.content}</p>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={analyzeContent}
+                        disabled={contentLoading}
+                        className="flex-1 flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                      >
+                        {contentLoading ? (
+                          <>
+                            <Loader className="animate-spin h-5 w-5 mr-2" />
+                            Analisando...
+                          </>
+                        ) : (
+                          <>
+                            <Brain className="h-5 w-5 mr-2" />
+                            Analisar Conteúdo
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={clearContentForm}
+                        className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold"
+                      >
+                        Limpar
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Detailed Analysis */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">Detalhes da Análise</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Fonte Identificada:</span>
-                        <span className="text-sm font-medium">
-                          {analysis.sourceName || 'Não identificada'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Credibilidade da Fonte:</span>
-                        <span className="text-sm font-medium">
-                          {analysis.sourceCredibility ? (analysis.sourceCredibility * 100).toFixed(1) : 'N/A'}%
-                        </span>
-                      </div>
-                      <div className="pt-2 border-t border-gray-200">
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          {analysis.sourceName === 'Fonte não identificada' || analysis.sourceName === 'Fonte Desconhecida'
-                            ? `Por ser uma fonte desconhecida, ela possui maior risco do que fontes já catalogadas e analisadas. Recomenda-se extrema cautela e verificação com fontes confiáveis antes de considerar a informação como verdadeira.`
-                            : analysis.sourceCredibility >= 0.8
-                              ? `A fonte "${analysis.sourceName}" possui alto índice de confiabilidade baseado em análises prévias. É considerada uma fonte confiável para busca de informações.`
-                              : analysis.sourceCredibility >= 0.6
-                                ? `A fonte "${analysis.sourceName}" possui credibilidade moderada. Recomenda-se verificar informações com outras fontes para confirmação.`
-                                : `A fonte "${analysis.sourceName}" possui baixo índice de confiabilidade. Recomenda-se cautela e verificação com fontes mais confiáveis.`
-                          }
-                        </p>
-                      </div>
+                {/* Content Analysis Results */}
+                <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <div className="p-2 bg-gray-100 rounded-lg mr-3">
+                      <FileText className="h-6 w-6 text-gray-600" />
                     </div>
-                  </div>
+                    Resultado da Análise de Conteúdo
+                  </h2>
+
+                  <AnimatePresence mode="wait">
+                    {contentLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-12"
+                      >
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                        <p className="text-gray-600">Analisando conteúdo com IA...</p>
+                      </motion.div>
+                    ) : contentAnalysis ? (
+                      <motion.div
+                        key="results"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-6"
+                      >
+                        {/* Risk Level */}
+                        <div className={`p-4 rounded-lg border-2 ${getRiskColor(contentAnalysis.riskLevel)}`}>
+                          <div className="flex items-center">
+                            {getRiskIcon(contentAnalysis.riskLevel)}
+                            <div className="ml-3">
+                              <h3 className="text-lg font-semibold">
+                                {contentAnalysis.isFakeNews ? "Fake News Detectada" : "Conteúdo Confiável"}
+                              </h3>
+                              <p className="text-sm opacity-75">
+                                Confiança: {contentAnalysis.confidence ? (contentAnalysis.confidence * 100).toFixed(1) : 'N/A'}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Detailed Analysis */}
+                        <div className="space-y-4">
+                          <div className="bg-white p-4 rounded-lg">
+                            <h4 className="font-medium text-gray-900 mb-2">Análise Detalhada</h4>
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                              {contentAnalysis.detailedAnalysis}
+                            </p>
+                          </div>
+
+                          {contentAnalysis.reasons && contentAnalysis.reasons.length > 0 && (
+                            <div className="bg-white p-4 rounded-lg">
+                              <h4 className="font-medium text-gray-900 mb-2">Razões</h4>
+                              <ul className="space-y-1">
+                                {contentAnalysis.reasons.map((reason, index) => (
+                                  <li key={index} className="text-sm text-gray-700 flex items-start">
+                                    <span className="text-blue-500 mr-2">•</span>
+                                    {reason}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {contentAnalysis.recommendations && contentAnalysis.recommendations.length > 0 && (
+                            <div className="bg-white p-4 rounded-lg">
+                              <h4 className="font-medium text-gray-900 mb-2">Recomendações</h4>
+                              <ul className="space-y-1">
+                                {contentAnalysis.recommendations.map((rec, index) => (
+                                  <li key={index} className="text-sm text-gray-700 flex items-start">
+                                    <span className="text-green-500 mr-2">•</span>
+                                    {rec}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-12 text-gray-500"
+                      >
+                        <Brain className="h-12 w-12 mb-4 opacity-50" />
+                        <p>Insira o título e conteúdo da notícia para análise com IA</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
             ) : (
               <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-12 text-gray-500"
+                key="source"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
               >
-                <FileText className="h-12 w-12 mb-4 opacity-50" />
-                <p>Insira os dados da notícia e clique em "Analisar" para ver os resultados</p>
+                {/* Source Analysis Form */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100 shadow-sm">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <div className="p-2 bg-green-100 rounded-lg mr-3">
+                      <Globe className="h-6 w-6 text-green-600" />
+                    </div>
+                    Análise de Fonte
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4">Verifique a credibilidade de um site ou domínio</p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">URL do Site *</label>
+                      <input
+                        type="url"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${showSourceErrors && sourceErrors.url
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300'
+                          }`}
+                        placeholder="https://exemplo.com"
+                        value={sourceData.url}
+                        onChange={(e) => handleSourceInputChange("url", e.target.value)}
+                      />
+                      {showSourceErrors && sourceErrors.url && (
+                        <p className="mt-1 text-sm text-red-600">{sourceErrors.url}</p>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={analyzeSource}
+                        disabled={sourceLoading}
+                        className="flex-1 flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                      >
+                        {sourceLoading ? (
+                          <>
+                            <Loader className="animate-spin h-5 w-5 mr-2" />
+                            Analisando...
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="h-5 w-5 mr-2" />
+                            Analisar Fonte
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={clearSourceForm}
+                        className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold"
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Source Analysis Results */}
+                <div className="bg-gradient-to-br from-gray-50 to-green-50 p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <div className="p-2 bg-gray-100 rounded-lg mr-3">
+                      <FileText className="h-6 w-6 text-gray-600" />
+                    </div>
+                    Resultado da Análise de Fonte
+                  </h2>
+
+                  <AnimatePresence mode="wait">
+                    {sourceLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-12"
+                      >
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+                        <p className="text-gray-600">Analisando fonte...</p>
+                      </motion.div>
+                    ) : sourceAnalysis ? (
+                      <motion.div
+                        key="results"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-6"
+                      >
+                        {/* Risk Level */}
+                        <div className={`p-4 rounded-lg border-2 ${getRiskColor(sourceAnalysis.riskLevel)}`}>
+                          <div className="flex items-center">
+                            {getRiskIcon(sourceAnalysis.riskLevel)}
+                            <div className="ml-3">
+                              <h3 className="text-lg font-semibold">
+                                {sourceAnalysis.domain}
+                              </h3>
+                              <p className="text-sm opacity-75">
+                                Credibilidade: {sourceAnalysis.credibility ? (sourceAnalysis.credibility * 100).toFixed(1) : 'N/A'}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Detailed Analysis */}
+                        <div className="space-y-4">
+                          <div className="bg-white p-4 rounded-lg">
+                            <h4 className="font-medium text-gray-900 mb-2">Informações da Fonte</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-600">País:</span>
+                                <span className="text-sm font-medium">{sourceAnalysis.scamAdviserData?.country || 'Brasil'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-600">Idade do Domínio:</span>
+                                <span className="text-sm font-medium">{formatDomainAge(sourceAnalysis.scamAdviserData?.domainAge)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-600">Nível de Risco:</span>
+                                <span className="text-sm font-medium">{translateRiskLevel(sourceAnalysis.scamAdviserData?.riskLevel)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-12 text-gray-500"
+                      >
+                        <Globe className="h-12 w-12 mb-4 opacity-50" />
+                        <p>Insira a URL do site para análise de credibilidade</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
-
-
-
     </div>
   )
 }

@@ -73,9 +73,21 @@ e então pode utilizar
 
 **Acesso:** http://localhost:3000
 
+## 🔧 Configuração das APIs
+
+Para usar as funcionalidades de análise, configure as APIs externas:
+
+1. **🤖 Ollama (IA Gratuita Local)**: https://ollama.ai/download
+2. **ScamAdviser** (Gratuita - sem API key): Funciona automaticamente
+
+Veja o arquivo `setup-ollama.md` para instruções detalhadas de configuração da IA gratuita.
+
 ## 📋 Funcionalidades
 
-- ✅ **Análise Automática** via ScamAdviser API
+- 🤖 **Análise de Conteúdo com IA Gratuita** - Ollama (local) + APIs gratuitas para detectar fake news
+- 🌐 **Busca Completa na Web** - Múltiplos motores de busca, redes sociais, sites acadêmicos e governamentais
+- ✅ **Análise de Fonte** via ScamAdviser API (credibilidade de domínios)
+- ✅ **Interface com Abas** - análise separada de conteúdo e fonte
 - ✅ **Fontes Automáticas** - adicionadas automaticamente ao analisar notícias
 - ✅ **Rede de Confiança** com visualização D3.js em tempo real
 - ✅ **Interface Moderna** em React/Next.js
@@ -96,15 +108,22 @@ e então pode utilizar
 ```
 Frontend (React/Next.js) → Nginx → Backend (Node.js) → PostgreSQL
                                 ↓
-                         ScamAdviser API
+                    DeepSeek API + ScamAdviser API
 ```
 
 ## 💡 Como Usar
 
-1. **Acesse** o sistema via browser
-2. **Insira** título, conteúdo e URL da notícia
-3. **Analise** automaticamente - a fonte é adicionada ao banco
-4. **Visualize** a rede de confiança atualizada em tempo real
+### Análise de Conteúdo (DeepSeek)
+1. **Acesse** a aba "Análise de Conteúdo"
+2. **Insira** título e conteúdo da notícia
+3. **Analise** com IA - detecta fake news automaticamente
+4. **Veja** análise detalhada com razões e recomendações
+
+### Análise de Fonte (ScamAdviser)
+1. **Acesse** a aba "Análise de Fonte"
+2. **Insira** URL do site/domínio
+3. **Analise** credibilidade da fonte
+4. **Veja** dados de reputação e confiança
 
 ## 🔄 Sistema Automático
 
@@ -121,4 +140,6 @@ Frontend (React/Next.js) → Nginx → Backend (Node.js) → PostgreSQL
 - **Docker:** ✅ Pronto para produção
 - **Jenkins:** ✅ Pipeline configurado
 - **Sistema Automático:** ✅ Fontes automáticas
+- **DeepSeek API:** ✅ Integrada
+- **ScamAdviser API:** ✅ Integrada
 

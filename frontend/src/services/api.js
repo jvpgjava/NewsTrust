@@ -51,7 +51,13 @@ export const newsAPI = {
   delete: (id) => api.delete(`/news/${id}`),
 }
 
+export const contentAnalysisAPI = {
+  analyze: (contentData) => api.post("/api/content-analysis", contentData),
+}
 
+export const sourceAnalysisAPI = {
+  analyze: (sourceData) => api.post("/api/source-analysis", sourceData),
+}
 
 export const graphAPI = {
   getStats: () => api.get("/api/graph/stats"),

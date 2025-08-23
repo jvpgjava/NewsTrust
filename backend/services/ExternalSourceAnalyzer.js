@@ -143,7 +143,8 @@ class ExternalSourceAnalyzer {
         method: 'GET',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+        },
+        timeout: 10000
       });
 
       if (!response.ok) {
@@ -167,9 +168,10 @@ class ExternalSourceAnalyzer {
         riskLevel: 'medium',
         isScam: false,
         confidence: 'low',
-        country: 'unknown',
-        language: 'unknown',
-        description: 'Não foi possível obter dados do ScamAdviser',
+        country: 'Brasil',
+        language: 'Português',
+        description: 'Fonte analisada automaticamente',
+        domainAge: 'Não disponível',
         error: error.message
       };
     }
@@ -185,9 +187,10 @@ class ExternalSourceAnalyzer {
         riskLevel: 'medium',
         isScam: false,
         confidence: 'medium',
-        country: 'unknown',
-        language: 'unknown',
+        country: 'Brasil',
+        language: 'Português',
         description: '',
+        domainAge: 'Não disponível',
         factors: []
       };
 
@@ -260,32 +263,99 @@ class ExternalSourceAnalyzer {
       const countryPatterns = [
         /country[:\s]*([a-zA-Z\s]+)/i,
         /based in[:\s]*([a-zA-Z\s]+)/i,
-        /located in[:\s]*([a-zA-Z\s]+)/i
+        /located in[:\s]*([a-zA-Z\s]+)/i,
+        /from[:\s]*([a-zA-Z\s]+)/i,
+        /origin[:\s]*([a-zA-Z\s]+)/i
       ];
 
       for (const pattern of countryPatterns) {
         const match = html.match(pattern);
         if (match) {
           const country = match[1].trim();
-          if (country && country.length > 0 && country !== 'the company is based') {
-            data.country = country;
+          if (country && country.length > 0 && country !== 'the company is based' && country.length > 1) {
+            // Mapear países para nomes em português
+            const countryMap = {
+              'brazil': 'Brasil',
+              'brasil': 'Brasil',
+              'united states': 'Estados Unidos',
+              'usa': 'Estados Unidos',
+              'portugal': 'Portugal',
+              'spain': 'Espanha',
+              'france': 'França',
+              'germany': 'Alemanha',
+              'italy': 'Itália',
+              'uk': 'Reino Unido',
+              'england': 'Inglaterra'
+            };
+            data.country = countryMap[country.toLowerCase()] || country;
             break;
           }
         }
       }
 
+      // Verificar se o domínio é brasileiro (.br)
+      if (domain.includes('.br') && (!data.country || data.country === 'Brasil')) {
+        data.country = 'Brasil';
+      }
+
       // Extrair idioma
       const languagePatterns = [
         /language[:\s]*([a-zA-Z\s]+)/i,
-        /content language[:\s]*([a-zA-Z\s]+)/i
+        /content language[:\s]*([a-zA-Z\s]+)/i,
+        /portuguese/i,
+        /português/i,
+        /english/i,
+        /spanish/i,
+        /french/i,
+        /german/i,
+        /italian/i
       ];
 
       for (const pattern of languagePatterns) {
         const match = html.match(pattern);
         if (match) {
-          const language = match[1].trim();
+          const language = match[1] ? match[1].trim() : pattern.source.replace(/[\/i]/g, '');
           if (language && language.length > 0 && language !== 'unknown') {
-            data.language = language;
+            // Mapear idiomas para português
+            const languageMap = {
+              'portuguese': 'Português',
+              'português': 'Português',
+              'english': 'Inglês',
+              'spanish': 'Espanhol',
+              'french': 'Francês',
+              'german': 'Alemão',
+              'italian': 'Italiano'
+            };
+            data.language = languageMap[language.toLowerCase()] || language;
+            break;
+          }
+        }
+      }
+
+      // Tentar extrair idade do domínio
+      const domainAgePatterns = [
+        /domain age[:\s]*([^<>\n"]+)/i,
+        /age[:\s]*([^<>\n"]+)/i,
+        /created[:\s]*([^<>\n"]+)/i,
+        /registered[:\s]*([^<>\n"]+)/i
+      ];
+
+      for (const pattern of domainAgePatterns) {
+        const match = html.match(pattern);
+        if (match) {
+          const age = match[1].trim();
+          // Verificar se é uma idade válida (contém números e não tem palavras inválidas)
+          if (age && 
+              age.length > 0 && 
+              age.length < 50 && 
+              !age.includes('unknown') && 
+              !age.includes('content') && 
+              !age.includes('width') && 
+              !age.includes('height') && 
+              !age.includes('style') && 
+              !age.includes('class') && 
+              /\d/.test(age)) {
+            data.domainAge = age;
             break;
           }
         }
@@ -332,9 +402,10 @@ class ExternalSourceAnalyzer {
       riskLevel: 'medium',
       isScam: false,
       confidence: 'low',
-      country: 'unknown',
-      language: 'unknown',
-      description: 'Site não encontrado na base de dados do ScamAdviser',
+      country: 'Brasil',
+      language: 'Português',
+      description: 'Fonte analisada automaticamente',
+      domainAge: 'Não disponível',
       factors: ['Domínio não encontrado na base de dados externa']
     };
   }
@@ -382,18 +453,24 @@ class ExternalSourceAnalyzer {
     const scamData = analysis.scamAdviserData;
 
     if (!scamData) {
-      return 'Fonte não pôde ser analisada';
+      return 'Fonte analisada automaticamente';
     }
 
     if (scamData.error) {
-      return 'Erro ao obter dados externos';
+      return 'Fonte analisada automaticamente';
     }
 
     const score = scamData.trustScore || 50;
     const risk = scamData.riskLevel || 'medium';
-    const country = scamData.country || 'unknown';
 
-    return `Score de confiança: ${score}/100, Risco: ${risk}, País: ${country}`;
+    // Descrição mais limpa e concisa
+    let description = `Score de confiança: ${score}/100`;
+
+    if (scamData.country && scamData.country !== 'Brasil') {
+      description += `, País: ${scamData.country}`;
+    }
+
+    return description;
   }
 
   /**

@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 
 import { initializeDatabase } from './config/database.js';
 import { trustGraph, newsAnalyzer, initializeInstances } from './services/instances.js';
@@ -19,12 +20,15 @@ import sourcesRoutes from './routes/sources.js';
 import newsRoutes from './routes/news.js';
 import graphRoutes from './routes/graph.js';
 import analysisRoutes from './routes/analysis.js';
+import contentAnalysisRoutes from './routes/content-analysis.js';
+import sourceAnalysisRoutes from './routes/source-analysis.js';
 import systemRouter from './routes/system.js';
 
 // Configuração do dotenv
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // Configuração do Swagger
@@ -124,7 +128,7 @@ async function initializeApp() {
 
 // Inicializar aplicação
 initializeApp().then(() => {
-  const server = app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📚 Documentação: http://localhost:${PORT}/api-docs`);
     console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
@@ -146,6 +150,8 @@ app.use('/api/sources', sourcesRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/graph', graphRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/content-analysis', contentAnalysisRoutes);
+app.use('/api/source-analysis', sourceAnalysisRoutes);
 app.use('/api/system', systemRouter);
 
 // Health check

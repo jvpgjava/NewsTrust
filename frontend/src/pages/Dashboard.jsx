@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { TrendingUp, TrendingDown, Users, Network, CheckCircle, XCircle, Activity } from "lucide-react"
+import websocketService from "../services/websocket.js"
 import {
   LineChart,
   Line,
@@ -23,54 +24,62 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const [statsResponse, recentAnalysesResponse] = await Promise.all([
-          api.get("/api/graph/stats"),
-          api.get("/api/news?limit=5")
-        ])
+    // Conectar WebSocket
+    websocketService.connect();
 
-        setStats(statsResponse.data)
-        setRecentAnalyses(recentAnalysesResponse.data.noticias || [])
-      } catch (error) {
-        console.error("Error loading dashboard data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+    // Listener para dados iniciais
+    const handleInitialData = (data) => {
+      console.log('📊 Dashboard - Dados iniciais recebidos:', data);
+      setStats({
+        sourcesCount: data.dashboard.sourcesCount,
+        connectionsCount: data.dashboard.connectionsCount,
+        newsCount: data.dashboard.newsCount,
+        fakeNewsCount: data.dashboard.fakeNewsCount,
+        trendData: data.dashboard.trendData,
+        riskDistribution: data.dashboard.riskDistribution
+      });
+      setRecentAnalyses(data.recentAnalyses || []);
+      setLoading(false);
+    };
 
-    loadDashboardData()
+    // Listener para atualizações
+    const handleUpdate = (data) => {
+      setStats({
+        sourcesCount: data.dashboard.sourcesCount,
+        connectionsCount: data.dashboard.connectionsCount,
+        newsCount: data.dashboard.newsCount,
+        fakeNewsCount: data.dashboard.fakeNewsCount,
+        trendData: data.dashboard.trendData,
+        riskDistribution: data.dashboard.riskDistribution
+      });
+      setRecentAnalyses(data.recentAnalyses || []);
+    };
 
-    // Atualizar dados a cada 30 segundos
-    const interval = setInterval(loadDashboardData, 30000)
+    // Adicionar listeners
+    websocketService.addListener('initial_data', handleInitialData);
+    websocketService.addListener('update', handleUpdate);
 
-    // WebSocket para atualizações em tempo real
-    const ws = new WebSocket('ws://localhost:3001')
-
-    ws.onopen = () => {
-      console.log('WebSocket conectado para dashboard')
-    }
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'news_analyzed' || data.type === 'stats_updated') {
-        loadDashboardData()
-      }
-    }
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-
+    // Cleanup
     return () => {
-      clearInterval(interval)
-      ws.close()
-    }
-  }, [])
+      websocketService.removeListener('initial_data', handleInitialData);
+      websocketService.removeListener('update', handleUpdate);
+      // Não desconectar o WebSocket aqui, apenas remover os listeners
+    };
+  }, []);
 
   // Chart data from stats (only real data)
-  const trendData = stats?.monthlyTrends || []
-  const riskDistribution = stats?.riskDistribution || []
+  const trendData = stats?.trendData || []
+
+  // Converter riskDistribution de objeto para array
+  const riskDistribution = stats?.riskDistribution ? [
+    { name: 'Baixo Risco', value: stats.riskDistribution.baixo || 0, color: '#10B981' },
+    { name: 'Médio Risco', value: stats.riskDistribution.medio || 0, color: '#F59E0B' },
+    { name: 'Alto Risco', value: stats.riskDistribution.alto || 0, color: '#EF4444' }
+  ] : [
+    { name: 'Baixo Risco', value: 0, color: '#10B981' },
+    { name: 'Médio Risco', value: 0, color: '#F59E0B' },
+    { name: 'Alto Risco', value: 0, color: '#EF4444' }
+  ]
 
   if (loading) {
     return (
@@ -97,7 +106,7 @@ export default function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Fontes Analisadas</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.nodeCount || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.sourcesCount || 0}</p>
             </div>
           </div>
         </div>
@@ -109,7 +118,7 @@ export default function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Conexões de Confiança</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.edgeCount || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.connectionsCount || 0}</p>
             </div>
           </div>
         </div>
@@ -147,11 +156,10 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="realNews" stroke="#22c55e" strokeWidth={2} name="Notícias Reais" />
-              <Line type="monotone" dataKey="fakeNews" stroke="#ef4444" strokeWidth={2} name="Fake News" />
+              <Line type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={2} name="Análises" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -203,7 +211,7 @@ export default function Dashboard() {
               <div key={analysis.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-gray-900 mb-1">
-                    {analysis.texto ? (analysis.texto.length > 50 ? analysis.texto.substring(0, 50) + '...' : analysis.texto) : 'Análise de Notícia'}
+                    {analysis.title ? (analysis.title.length > 50 ? analysis.title.substring(0, 50) + '...' : analysis.title) : 'Análise de Notícia'}
                   </h4>
                   <p className="text-xs text-gray-500">
                     {analysis.created_at ? new Date(analysis.created_at).toLocaleString("pt-BR") : 'Data não disponível'}
@@ -212,21 +220,21 @@ export default function Dashboard() {
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {analysis.confiabilidade ? (parseFloat(analysis.confiabilidade) * 100).toFixed(0) : 'N/A'}%
+                      {analysis.credibility ? (parseFloat(analysis.credibility) * 100).toFixed(0) : 'N/A'}%
                     </p>
                     <p className="text-xs text-gray-500">Confiabilidade</p>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${(parseFloat(analysis.confiabilidade) || 0) < 0.4
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${(parseFloat(analysis.credibility) || 0) < 0.4
                       ? "bg-red-100 text-red-800"
-                      : (parseFloat(analysis.confiabilidade) || 0) < 0.7
+                      : (parseFloat(analysis.credibility) || 0) < 0.7
                         ? "bg-yellow-100 text-yellow-800"
                         : "bg-green-100 text-green-800"
                       }`}
                   >
-                    {(parseFloat(analysis.confiabilidade) || 0) < 0.4
+                    {(parseFloat(analysis.credibility) || 0) < 0.4
                       ? "Alto Risco"
-                      : (parseFloat(analysis.confiabilidade) || 0) < 0.7
+                      : (parseFloat(analysis.credibility) || 0) < 0.7
                         ? "Médio Risco"
                         : "Baixo Risco"}
                   </span>
@@ -242,33 +250,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Top Sources */}
-      {stats?.topSources && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Fontes Mais Confiáveis (Automático)</h3>
-          <div className="space-y-3">
-            {stats.topSources.map((source, index) => (
-              <div key={source.id} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-600">{index + 1}</span>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">{source.name}</p>
-                    <p className="text-xs text-gray-500 capitalize">{source.type}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">
-                    {(source.calculatedCredibility * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-xs text-gray-500">Credibilidade</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
