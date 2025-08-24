@@ -199,14 +199,20 @@ class RealTimeService {
         nodeType: 'news'
       }));
 
+      // Gerar conexões entre fontes baseadas em similaridade de credibilidade
+      const sourceConnections = this.generateSourceConnections(sourcesNodes);
+      
+      // Gerar conexões entre notícias baseadas em similaridade de conteúdo e credibilidade
+      const newsConnections = this.generateNewsConnections(newsNodes);
+
       const result = {
         sources: {
           nodes: sourcesNodes,
-          connections: [] // Implementar conexões baseadas em similaridade
+          connections: sourceConnections
         },
         news: {
           nodes: newsNodes,
-          connections: [] // Implementar conexões baseadas em conteúdo similar
+          connections: newsConnections
         }
       };
 
@@ -325,6 +331,114 @@ class RealTimeService {
   // Método para notificar sobre nova análise de conteúdo
   async notifyNewContentAnalysis(contentData) {
     await this.notifyNewAnalysis('content', contentData);
+  }
+
+  /**
+   * Gera conexões entre fontes baseadas em similaridade de credibilidade
+   */
+  generateSourceConnections(sources) {
+    const connections = [];
+    
+    for (let i = 0; i < sources.length; i++) {
+      for (let j = i + 1; j < sources.length; j++) {
+        const source1 = sources[i];
+        const source2 = sources[j];
+        
+        // Calcular similaridade de credibilidade (0-1)
+        const credibilityDiff = Math.abs(source1.credibility - source2.credibility);
+        const similarity = 1 - credibilityDiff; // Quanto mais similar, maior o valor
+        
+        // Conectar se a similaridade for maior que 0.3 (30%)
+        if (similarity > 0.3) {
+          connections.push({
+            source: source1.id,
+            target: source2.id,
+            weight: similarity,
+            type: 'credibility_similarity',
+            label: `Similaridade: ${(similarity * 100).toFixed(0)}%`
+          });
+        }
+      }
+    }
+    
+    console.log(`🔗 Geradas ${connections.length} conexões entre fontes baseadas em similaridade`);
+    return connections;
+  }
+
+  /**
+   * Gera conexões entre notícias baseadas em similaridade de conteúdo e credibilidade
+   */
+  generateNewsConnections(news) {
+    const connections = [];
+    
+    for (let i = 0; i < news.length; i++) {
+      for (let j = i + 1; j < news.length; j++) {
+        const news1 = news[i];
+        const news2 = news[j];
+        
+        // Calcular similaridade de credibilidade
+        const confidenceDiff = Math.abs(news1.confidence - news2.confidence);
+        const credibilitySimilarity = 1 - confidenceDiff;
+        
+        // Calcular similaridade de conteúdo (baseado em palavras-chave)
+        const contentSimilarity = this.calculateContentSimilarity(news1.content, news2.content);
+        
+        // Similaridade combinada (média ponderada)
+        const combinedSimilarity = (credibilitySimilarity * 0.6) + (contentSimilarity * 0.4);
+        
+        // Conectar se a similaridade combinada for maior que 0.4 (40%)
+        if (combinedSimilarity > 0.4) {
+          connections.push({
+            source: news1.id,
+            target: news2.id,
+            weight: combinedSimilarity,
+            type: 'content_credibility_similarity',
+            label: `Similaridade: ${(combinedSimilarity * 100).toFixed(0)}%`,
+            details: {
+              credibilitySimilarity: credibilitySimilarity,
+              contentSimilarity: contentSimilarity
+            }
+          });
+        }
+      }
+    }
+    
+    console.log(`🔗 Geradas ${connections.length} conexões entre notícias baseadas em similaridade`);
+    return connections;
+  }
+
+  /**
+   * Calcula similaridade de conteúdo entre duas notícias
+   */
+  calculateContentSimilarity(content1, content2) {
+    try {
+      // Extrair palavras-chave (palavras com mais de 3 caracteres)
+      const words1 = content1.toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 3);
+      
+      const words2 = content2.toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 3);
+      
+      // Calcular interseção de palavras
+      const set1 = new Set(words1);
+      const set2 = new Set(words2);
+      const intersection = new Set([...set1].filter(x => set2.has(x)));
+      
+      // Calcular união de palavras
+      const union = new Set([...set1, ...set2]);
+      
+      // Similaridade Jaccard
+      const similarity = union.size > 0 ? intersection.size / union.size : 0;
+      
+      return similarity;
+    } catch (error) {
+      console.error('Erro ao calcular similaridade de conteúdo:', error);
+      return 0;
+    }
   }
 }
 

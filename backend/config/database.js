@@ -89,6 +89,40 @@ export async function initializeDatabase() {
       )
     `);
 
+    // Criar tabela de análises de conteúdo se não existir
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS analises_conteudo (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(500) NOT NULL,
+        content TEXT NOT NULL,
+        is_fake_news BOOLEAN NOT NULL,
+        confidence DECIMAL(3,2) NOT NULL,
+        risk_level VARCHAR(20) NOT NULL,
+        reasons TEXT[],
+        recommendations TEXT[],
+        detailed_analysis TEXT,
+        score DECIMAL(3,2),
+        web_results JSONB,
+        ai_analysis JSONB,
+        search_coverage TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Criar tabela de conexões de confiança se não existir
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS conexoes_confianca (
+        id SERIAL PRIMARY KEY,
+        fonte_origem_id INTEGER REFERENCES fontes(id) ON DELETE CASCADE,
+        fonte_destino_id INTEGER REFERENCES fontes(id) ON DELETE CASCADE,
+        peso_conexao DECIMAL(3,2) NOT NULL,
+        tipo_conexao VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(fonte_origem_id, fonte_destino_id)
+      )
+    `);
+
     // Criar índices para melhor performance
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_noticias_id_fonte ON noticias(id_fonte);
@@ -96,6 +130,10 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_conexoes_destino ON conexoes(fonte_destino);
       CREATE INDEX IF NOT EXISTS idx_fontes_site ON fontes(site);
       CREATE INDEX IF NOT EXISTS idx_noticias_link ON noticias(link);
+      CREATE INDEX IF NOT EXISTS idx_analises_conteudo_created_at ON analises_conteudo(created_at);
+      CREATE INDEX IF NOT EXISTS idx_analises_conteudo_is_fake_news ON analises_conteudo(is_fake_news);
+      CREATE INDEX IF NOT EXISTS idx_conexoes_confianca_origem ON conexoes_confianca(fonte_origem_id);
+      CREATE INDEX IF NOT EXISTS idx_conexoes_confianca_destino ON conexoes_confianca(fonte_destino_id);
     `);
 
     // Criar função para atualizar updated_at automaticamente

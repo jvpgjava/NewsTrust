@@ -2,6 +2,8 @@ import express from 'express';
 import Joi from 'joi';
 import { newsAnalyzer } from '../services/instances.js';
 import { query } from '../config/database.js';
+import realTimeService from '../services/RealTimeService.js';
+import AIFactChecker from '../services/AIFactChecker.js';
 
 const router = express.Router();
 
@@ -285,7 +287,78 @@ router.post('/', async (req, res) => {
             [texto, link, id_fonte, confiabilidade]
         );
 
-        res.status(201).json(result.rows[0]);
+        const newNews = result.rows[0];
+
+        // Buscar dados da fonte para análise
+        const fonteData = await query(
+            'SELECT nome, site FROM fontes WHERE id = $1',
+            [id_fonte]
+        );
+
+        const fonte = fonteData.rows[0];
+
+        // Realizar análise automática de conteúdo
+        try {
+            console.log('🤖 Iniciando análise automática de conteúdo para nova notícia...');
+            
+            const factChecker = new AIFactChecker();
+            const title = texto.substring(0, 100) + (texto.length > 100 ? '...' : '');
+            
+            const analysis = await factChecker.analyzeContent(title, texto);
+
+            // Salvar análise no banco de dados
+            const savedAnalysis = await query(`
+                INSERT INTO analises_conteudo (
+                    title, content, is_fake_news, confidence, risk_level, 
+                    reasons, recommendations, detailed_analysis, score, 
+                    web_results, ai_analysis, search_coverage
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                RETURNING id, created_at
+            `, [
+                title,
+                texto,
+                analysis.isFakeNews,
+                analysis.confidence,
+                analysis.riskLevel,
+                analysis.reasons,
+                analysis.recommendations,
+                analysis.detailedAnalysis,
+                analysis.score,
+                JSON.stringify(analysis.webResults),
+                JSON.stringify(analysis.aiAnalysis),
+                analysis.searchCoverage
+            ]);
+
+            console.log('✅ Análise automática concluída e salva:', savedAnalysis.rows[0]);
+
+            // Notificar via WebSocket sobre a nova análise
+            await realTimeService.notifyNewContentAnalysis({
+                id: savedAnalysis.rows[0].id,
+                title: title,
+                content: texto,
+                isFakeNews: analysis.isFakeNews,
+                confidence: analysis.confidence,
+                riskLevel: analysis.riskLevel,
+                timestamp: savedAnalysis.rows[0].created_at.toISOString()
+            });
+
+        } catch (analysisError) {
+            console.error('⚠️ Erro na análise automática:', analysisError);
+            // Não falhar a criação da notícia por causa do erro de análise
+        }
+
+        // Notificar via WebSocket sobre a nova notícia
+        await realTimeService.notifyNewAnalysis('news', {
+            id: newNews.id,
+            texto: newNews.texto,
+            link: newNews.link,
+            id_fonte: newNews.id_fonte,
+            confiabilidade: newNews.confiabilidade,
+            fonte: fonte,
+            created_at: newNews.created_at.toISOString()
+        });
+
+        res.status(201).json(newNews);
     } catch (error) {
         console.error('Erro ao criar notícia:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });

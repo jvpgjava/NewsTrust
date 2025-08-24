@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../config/database.js';
 import RealTimeUpdateService from '../services/RealTimeUpdateService.js';
+import realTimeService from '../services/RealTimeService.js';
 
 const router = express.Router();
 
@@ -78,6 +79,52 @@ router.get('/health', (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
+});
+
+/**
+ * @swagger
+ * /api/system/dashboard:
+ *   get:
+ *     summary: Obtém dados do dashboard
+ *     description: Retorna estatísticas e dados para o dashboard em tempo real
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: Dados do dashboard retornados com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sourcesCount:
+ *                   type: integer
+ *                 connectionsCount:
+ *                   type: integer
+ *                 newsCount:
+ *                   type: integer
+ *                 fakeNewsCount:
+ *                   type: integer
+ *                 trendData:
+ *                   type: array
+ *                 riskDistribution:
+ *                   type: object
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/dashboard', async (req, res) => {
+  try {
+    console.log('📊 Buscando dados do dashboard...');
+    
+    const dashboardData = await realTimeService.getDashboardData();
+    
+    res.json(dashboardData);
+  } catch (error) {
+    console.error('❌ Erro ao buscar dados do dashboard:', error);
+    res.status(500).json({
+      error: 'Erro ao buscar dados do dashboard',
+      details: error.message
+    });
+  }
 });
 
 export default router;

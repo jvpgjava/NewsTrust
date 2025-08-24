@@ -1,24 +1,33 @@
 import fetch from 'node-fetch'
-import { JSDOM } from 'jsdom'
 
 class AIFactChecker {
     constructor() {
-        this.ollamaUrl = 'http://localhost:11434' // Ollama local (gratuito)
-        this.freeAIApis = [
-            'https://api.free-ai.com/v1/chat/completions', // Exemplo de API gratuita
-            'https://api.openai.com/v1/chat/completions' // OpenAI (pode ter tier gratuito)
-        ]
+        console.log('🤖 AIFactChecker inicializado - Usando Groq e Perplexity')
+        
+        // APIs gratuitas
+        this.apis = {
+            groq: {
+                url: 'https://api.groq.com/openai/v1/chat/completions',
+                model: 'llama3-8b-8192',
+                keyEnv: 'GROQ_API_KEY'
+            },
+            perplexity: {
+                url: 'https://api.perplexity.ai/chat/completions',
+                model: 'llama-3.1-8b-instant',
+                keyEnv: 'PERPLEXITY_API_KEY'
+            }
+        }
     }
 
     async analyzeContent(title, content) {
         try {
-            console.log('🤖 Iniciando análise com IA gratuita + busca na web...')
+            console.log('🤖 Iniciando análise com Groq e Perplexity...')
 
-            // Primeiro fazer busca na web
+            // Busca na web
             const webResults = await this.searchWeb(title, content)
 
-            // Depois analisar com IA gratuita
-            const aiAnalysis = await this.analyzeWithFreeAI(title, content, webResults)
+            // Análise com APIs (Groq primeiro, depois Perplexity)
+            const aiAnalysis = await this.analyzeWithAPIs(title, content, webResults)
 
             // Combinar resultados
             const combinedAnalysis = this.combineResults(webResults, aiAnalysis)
@@ -33,7 +42,7 @@ class AIFactChecker {
                 score: combinedAnalysis.score,
                 webResults: webResults,
                 aiAnalysis: aiAnalysis,
-                searchCoverage: 'Busca na web + Análise de IA gratuita (Ollama + APIs gratuitas)'
+                searchCoverage: `Análise com ${aiAnalysis.source}`
             }
 
         } catch (error) {
@@ -46,7 +55,7 @@ class AIFactChecker {
         try {
             console.log('🔍 Buscando na web...')
 
-            // Busca simples usando DuckDuckGo
+            // Busca usando DuckDuckGo (gratuito)
             const searchQuery = `${title} ${content}`.substring(0, 100)
             const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`, {
                 headers: {
@@ -59,21 +68,19 @@ class AIFactChecker {
             }
 
             const html = await response.text()
-            const dom = new JSDOM(html)
-            const document = dom.window.document
-
+            
+            // Extrair resultados simples (sem JSDOM)
             const results = []
-            const resultElements = document.querySelectorAll('.result__title')
-
-            resultElements.forEach((element, index) => {
-                if (index < 10) {
-                    const title = element.textContent?.trim()
-                    const link = element.querySelector('a')?.href
-                    if (title && link) {
-                        results.push({ title, link })
+            const titleMatches = html.match(/<a[^>]*class="result__title"[^>]*>([^<]+)<\/a>/g)
+            
+            if (titleMatches) {
+                titleMatches.slice(0, 5).forEach(match => {
+                    const title = match.replace(/<[^>]*>/g, '').trim()
+                    if (title) {
+                        results.push({ title, link: '#' })
                     }
-                }
-            })
+                })
+            }
 
             return {
                 hasResults: results.length > 0,
@@ -87,191 +94,228 @@ class AIFactChecker {
         }
     }
 
-    async analyzeWithFreeAI(title, content, webResults) {
+    async analyzeWithAPIs(title, content, webResults) {
+        console.log('🤖 Analisando com APIs (Groq e Perplexity)...')
+
+        // Tentar Groq primeiro
         try {
-            console.log('🤖 Analisando com IA gratuita...')
-
-            // Tentar Ollama primeiro (local, gratuito)
-            let ollamaResult = await this.analyzeWithOllama(title, content, webResults)
-
-            if (ollamaResult) {
-                return ollamaResult
+            const groqResult = await this.analyzeWithGroq(title, content, webResults)
+            if (groqResult) {
+                console.log('✅ Análise concluída com Groq')
+                return groqResult
             }
-
-            // Se Ollama falhar, tentar APIs gratuitas
-            let freeAPIResult = await this.analyzeWithFreeAPIs(title, content, webResults)
-
-            if (freeAPIResult) {
-                return freeAPIResult
-            }
-
-            // Fallback: análise baseada em regras
-            return this.fallbackAnalysis(title, content, webResults)
-
         } catch (error) {
-            console.error('Erro na análise com IA:', error)
-            return this.fallbackAnalysis(title, content, webResults)
+            console.log(`⚠️ Groq falhou: ${error.message}`)
         }
+
+        // Se Groq falhar, tentar Perplexity
+        try {
+            const perplexityResult = await this.analyzeWithPerplexity(title, content, webResults)
+            if (perplexityResult) {
+                console.log('✅ Análise concluída com Perplexity')
+                return perplexityResult
+            }
+        } catch (error) {
+            console.log(`⚠️ Perplexity falhou: ${error.message}`)
+        }
+
+        // Se ambas falharem, retornar erro
+        throw new Error('Todas as APIs falharam. Configure GROQ_API_KEY ou PERPLEXITY_API_KEY.')
     }
 
-    async analyzeWithOllama(title, content, webResults) {
-        try {
-            const prompt = this.buildAIPrompt(title, content, webResults)
+    // Análise com Groq
+    async analyzeWithGroq(title, content, webResults) {
+        const apiKey = process.env.GROQ_API_KEY
+        if (!apiKey) {
+            throw new Error('GROQ_API_KEY não configurada')
+        }
 
-            const response = await fetch(`${this.ollamaUrl}/api/generate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama2', // Modelo gratuito
-                    prompt: prompt,
-                    stream: false
-                })
+        const prompt = this.createAnalysisPrompt(title, content, webResults)
+        
+        const response = await fetch(this.apis.groq.url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: this.apis.groq.model,
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 500,
+                temperature: 0.3
             })
+        })
 
-            if (!response.ok) {
-                console.log('Ollama não disponível, tentando outras opções...')
-                return null
-            }
-
-            const data = await response.json()
-            const aiResponse = data.response
-
-            return this.parseAIResponse(aiResponse)
-
-        } catch (error) {
-            console.log('Ollama não disponível:', error.message)
-            return null
+        if (!response.ok) {
+            throw new Error(`Groq API error: ${response.status}`)
         }
+
+        const data = await response.json()
+        return this.parseAIResponse(data.choices[0].message.content, 'Groq')
     }
 
-    async analyzeWithFreeAPIs(title, content, webResults) {
-        try {
-            const prompt = this.buildAIPrompt(title, content, webResults)
-
-            // Tentar APIs gratuitas
-            for (const apiUrl of this.freeAIApis) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            model: 'gpt-3.5-turbo',
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: 'Você é um especialista em fact-checking. Analise se a notícia é fake news ou não.'
-                                },
-                                {
-                                    role: 'user',
-                                    content: prompt
-                                }
-                            ],
-                            max_tokens: 500
-                        })
-                    })
-
-                    if (response.ok) {
-                        const data = await response.json()
-                        const aiResponse = data.choices[0].message.content
-
-                        return this.parseAIResponse(aiResponse)
-                    }
-                } catch (error) {
-                    console.log(`API ${apiUrl} não disponível:`, error.message)
-                    continue
-                }
-            }
-
-            return null
-
-        } catch (error) {
-            console.error('Erro nas APIs gratuitas:', error)
-            return null
+    // Análise com Perplexity
+    async analyzeWithPerplexity(title, content, webResults) {
+        const apiKey = process.env.PERPLEXITY_API_KEY
+        if (!apiKey) {
+            throw new Error('PERPLEXITY_API_KEY não configurada')
         }
+
+        const prompt = this.createAnalysisPrompt(title, content, webResults)
+        
+        const response = await fetch(this.apis.perplexity.url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: this.apis.perplexity.model,
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 500
+            })
+        })
+
+        if (!response.ok) {
+            throw new Error(`Perplexity API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return this.parseAIResponse(data.choices[0].message.content, 'Perplexity')
     }
 
-    buildAIPrompt(title, content, webResults) {
-        const webInfo = webResults.hasResults
-            ? `Encontrei ${webResults.totalResults} resultados relacionados na web.`
-            : 'Não encontrei resultados específicos na web.'
-
+    // Cria o prompt para análise
+    createAnalysisPrompt(title, content, webResults) {
         return `
-ANÁLISE DE FACT-CHECKING
+Analise esta notícia e determine se é fake news ou confiável:
 
 TÍTULO: ${title}
-CONTEÚDO: ${content}
+CONTEÚDO: ${content.substring(0, 500)}...
 
-INFORMAÇÕES DA WEB: ${webInfo}
+RESULTADOS DA BUSCA WEB:
+${webResults.results.map(r => `- ${r.title}`).join('\n')}
 
-Por favor, analise se esta notícia é fake news ou não. Considere:
-
-1. Se as afirmações são verificáveis
-2. Se há evidências na web
-3. Se o conteúdo parece crível
-4. Se há padrões típicos de fake news
-
-Responda no formato JSON:
+Responda APENAS em formato JSON válido:
 {
   "isFakeNews": true/false,
   "confidence": 0.0-1.0,
-  "riskLevel": "BAIXO/MÉDIO/ALTO",
+  "riskLevel": "baixo/medio/alto",
   "reasons": ["razão1", "razão2"],
-  "recommendations": ["rec1", "rec2"]
+  "recommendations": ["recomendação1", "recomendação2"],
+  "detailedAnalysis": "análise detalhada"
 }
-`
+        `.trim()
     }
 
-    parseAIResponse(aiResponse) {
+    // Parseia a resposta da IA
+    parseAIResponse(response, source) {
         try {
             // Tentar extrair JSON da resposta
-            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
+            const jsonMatch = response.match(/\{[\s\S]*\}/)
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0])
                 return {
                     isFakeNews: parsed.isFakeNews || false,
                     confidence: parsed.confidence || 0.5,
-                    riskLevel: parsed.riskLevel || 'MÉDIO',
+                    riskLevel: parsed.riskLevel || 'medio',
                     reasons: parsed.reasons || [],
                     recommendations: parsed.recommendations || [],
-                    source: 'IA Gratuita'
+                    detailedAnalysis: parsed.detailedAnalysis || response,
+                    source: source
                 }
             }
 
-            // Se não conseguir extrair JSON, fazer análise de texto
-            return this.analyzeTextResponse(aiResponse)
+            // Fallback: análise simples baseada em palavras-chave
+            return this.analyzeTextResponse(response, source)
 
         } catch (error) {
             console.error('Erro ao parsear resposta da IA:', error)
-            return this.analyzeTextResponse(aiResponse)
+            return this.analyzeTextResponse(response, source)
         }
     }
 
-    analyzeTextResponse(text) {
+    // Análise de texto quando JSON falha
+    analyzeTextResponse(text, source) {
         const lowerText = text.toLowerCase()
 
         let isFakeNews = false
         let confidence = 0.5
-        let riskLevel = 'MÉDIO'
+        let riskLevel = 'medio'
         const reasons = []
         const recommendations = []
 
-        // Análise baseada em palavras-chave
-        if (lowerText.includes('fake') || lowerText.includes('falso') || lowerText.includes('mentira')) {
-            isFakeNews = true
-            confidence = 0.7
-            riskLevel = 'ALTO'
-            reasons.push('IA detectou padrões de fake news')
-        }
+        // Análise baseada em palavras-chave mais sofisticada
+        let fakeScore = 0
+        let realScore = 0
 
-        if (lowerText.includes('verdadeiro') || lowerText.includes('confiável') || lowerText.includes('verificado')) {
+        // Palavras que indicam fake news
+        const fakeKeywords = [
+            'alienígena', 'alienigena', 'ufo', 'ovni', 'nave espacial', 'extraterrestre',
+            'conspiração', 'conspiracao', 'mentira', 'falso', 'fake', 'fraude',
+            'milagre', 'sobrenatural', 'fantasma', 'demônio', 'demonio',
+            'terra plana', 'nasa mente', 'governo esconde', 'verdade oculta',
+            'imortal', 'cura milagrosa', 'poderes especiais', 'telepatia'
+        ]
+
+        // Palavras que indicam notícia real
+        const realKeywords = [
+            'estudo', 'pesquisa', 'universidade', 'cientista', 'revista científica',
+            'publicado', 'confirmado', 'verificado', 'evidência', 'evidencia',
+            'dados', 'estatística', 'estatistica', 'relatório', 'relatorio',
+            'análise', 'analise', 'resultado', 'descoberta', 'inovação'
+        ]
+
+        // Contar palavras-chave
+        fakeKeywords.forEach(keyword => {
+            if (lowerText.includes(keyword)) {
+                fakeScore += 1
+            }
+        })
+
+        realKeywords.forEach(keyword => {
+            if (lowerText.includes(keyword)) {
+                realScore += 1
+            }
+        })
+
+        // Determinar se é fake news baseado no score
+        if (fakeScore > realScore) {
+            isFakeNews = true
+            // Quanto mais palavras fake, menor a confiança
+            if (fakeScore >= 3) {
+                confidence = 0.15 // Muito óbvio fake
+            } else if (fakeScore >= 2) {
+                confidence = 0.25 // Óbvio fake
+            } else {
+                confidence = 0.35 // Moderadamente fake
+            }
+            riskLevel = 'alto'
+            reasons.push(`IA detectou ${fakeScore} padrões de fake news`)
+        } else if (realScore > fakeScore) {
             isFakeNews = false
-            confidence = 0.6
-            riskLevel = 'BAIXO'
-            reasons.push('IA identificou como informação confiável')
+            // Quanto mais palavras reais, maior a confiança
+            if (realScore >= 3) {
+                confidence = 0.85 // Muito confiável
+            } else if (realScore >= 2) {
+                confidence = 0.75 // Confiável
+            } else {
+                confidence = 0.65 // Moderadamente confiável
+            }
+            riskLevel = 'baixo'
+            reasons.push(`IA detectou ${realScore} padrões de notícia confiável`)
+        } else {
+            // Empate - usar análise mais simples
+            if (lowerText.includes('fake') || lowerText.includes('falso') || lowerText.includes('mentira')) {
+                isFakeNews = true
+                confidence = 0.3
+                riskLevel = 'alto'
+                reasons.push('IA detectou padrões de fake news')
+            } else if (lowerText.includes('verdadeiro') || lowerText.includes('confiável') || lowerText.includes('verificado')) {
+                isFakeNews = false
+                confidence = 0.8
+                riskLevel = 'baixo'
+                reasons.push('IA identificou como informação confiável')
+            }
         }
 
         return {
@@ -280,96 +324,51 @@ Responda no formato JSON:
             riskLevel,
             reasons,
             recommendations,
-            source: 'IA Gratuita (Análise de Texto)'
+            detailedAnalysis: text,
+            source: `${source} (Análise de Texto)`
         }
     }
 
-    fallbackAnalysis(title, content, webResults) {
-        console.log('🔄 Usando análise de fallback...')
-
-        const text = `${title} ${content}`.toLowerCase()
-
-        // Detectar padrões de fake news mais abrangentes
-        const fakeNewsPatterns = [
-            /cura para todas as doenças/gi,
-            /cura para o câncer/gi,
-            /cura definitiva/gi,
-            /milagre/gi,
-            /100% de eficácia/gi,
-            /cura instantânea/gi,
-            /descoberta revolucionária/gi,
-            /mudará a medicina para sempre/gi,
-            /fim de todas as doenças/gi,
-            /tratamento universal/gi,
-            /cura mágica/gi,
-            /remédio milagroso/gi,
-            /cientistas descobrem cura/gi,
-            /pesquisadores inventam cura/gi,
-            /nova cura revolucionária/gi,
-            /microchips nas vacinas/gi,
-            /controlar a população/gi,
-            /rastrear vacinados/gi,
-            /bill gates implanta/gi,
-            /chips nas vacinas/gi,
-            /controle mundial/gi,
-            /satélites rastreiam/gi,
-            /distribuído gratuitamente em todo o mundo/gi,
-            /descoberta revolucionária/gi,
-            /todas as doenças conhecidas/gi
-        ]
-
-        const hasFakePatterns = fakeNewsPatterns.some(pattern => pattern.test(text))
-
-        // Detectar múltiplos padrões para aumentar certeza
-        const matchedPatterns = fakeNewsPatterns.filter(pattern => pattern.test(text))
-
-        // Extrair os textos que matcharam para mostrar ao usuário
-        const matchedTexts = matchedPatterns.slice(0, 3).map(pattern => {
-            const match = text.match(pattern)
-            return match ? match[0] : ''
-        }).filter(text => text.length > 0)
-
-        return {
-            isFakeNews: hasFakePatterns,
-            confidence: 0.85, // Confiança na análise (sempre alta quando detecta padrões)
-            riskLevel: hasFakePatterns ? 'ALTO' : 'BAIXO',
-            reasons: hasFakePatterns
-                ? [`Padrões típicos de fake news detectados: "${matchedTexts.join(', ')}"`]
-                : ['Análise básica não detectou padrões suspeitos'],
-            recommendations: hasFakePatterns
-                ? ['Verifique fontes oficiais', 'Consulte especialistas', 'Procure por evidências científicas']
-                : ['Continue verificando outras fontes'],
-            source: 'Análise de Fallback'
-        }
-    }
-
+    // Combina resultados da web e IA
     combineResults(webResults, aiAnalysis) {
-        // Determinar se é fake news ou não
         const isFakeNews = aiAnalysis.isFakeNews
+        let riskLevel = aiAnalysis.riskLevel || 'medio'
+        let confidence = aiAnalysis.confidence || 0.5
 
-        // Determinar nível de risco primeiro
-        let riskLevel = 'BAIXO'
-        let confidence = 0.8 // Alta confiança para baixo risco
-
+        // Ajustar confiança baseado no tipo de notícia
         if (isFakeNews) {
-            // Se é fake news, verificar se tem padrões claros
-            const hasClearPatterns = aiAnalysis.reasons.some(reason =>
-                reason.includes('Padrões típicos de fake news detectados')
-            )
-
-            if (hasClearPatterns) {
-                riskLevel = 'ALTO' // Padrões claros = alto risco
-                confidence = 0.3   // Baixa confiança (sistema não tem certeza absoluta)
+            // Fake news = confiança baixa (10-60%)
+            // Quanto mais óbvio for fake, menor a confiança
+            if (confidence > 0.8) {
+                confidence = 0.15 // Muito óbvio fake
+            } else if (confidence > 0.6) {
+                confidence = 0.25 // Óbvio fake
+            } else if (confidence > 0.4) {
+                confidence = 0.35 // Moderadamente fake
             } else {
-                riskLevel = 'MÉDIO' // Sem padrões claros = risco médio
-                confidence = 0.5    // Confiança média
+                confidence = Math.max(0.1, confidence) // Manter baixo
             }
+            riskLevel = 'alto'
         } else {
-            // Se não é fake news
-            if (webResults.hasResults) {
-                confidence = 0.9 // Alta confiança se encontrou informações na web
+            // Notícia confiável = confiança alta (60-95%)
+            if (confidence < 0.3) {
+                confidence = 0.75 // Muito confiável
+            } else if (confidence < 0.5) {
+                confidence = 0.85 // Confiável
             } else {
-                confidence = 0.7 // Confiança moderada se não encontrou
+                confidence = Math.min(0.95, confidence + 0.2) // Aumentar confiança
+            }
+            riskLevel = 'baixo'
+        }
+
+        // Ajustar confiança baseado nos resultados da web
+        if (webResults.hasResults) {
+            if (isFakeNews) {
+                // Para fake news, mais informações na web = confiança ainda mais baixa
+                confidence = Math.max(0.05, confidence - 0.05)
+            } else {
+                // Para notícia confiável, mais informações na web = confiança ainda mais alta
+                confidence = Math.min(0.95, confidence + 0.05)
             }
         }
 
@@ -385,9 +384,9 @@ Responda no formato JSON:
             confidence: Math.min(0.95, Math.max(0.05, confidence)),
             riskLevel,
             reasons,
-            detailedAnalysis: `Análise combinada: Web (${webResults.totalResults} resultados) + IA (${aiAnalysis.source}). ${isFakeNews ? 'FAKE NEWS DETECTADA' : 'NOTÍCIA APARENTA SER REAL'}. Confiança na análise: ${(confidence * 100).toFixed(1)}%`,
+            detailedAnalysis: `Análise com ${aiAnalysis.source}: Web (${webResults.totalResults} resultados) + IA. ${isFakeNews ? 'FAKE NEWS DETECTADA' : 'NOTÍCIA APARENTA SER REAL'}. Confiança: ${(confidence * 100).toFixed(1)}%`,
             recommendations: aiAnalysis.recommendations,
-            score: isFakeNews ? 0.8 : 0.2 // Score alto para fake news, baixo para real
+            score: isFakeNews ? 0.2 : 0.8
         }
     }
 }

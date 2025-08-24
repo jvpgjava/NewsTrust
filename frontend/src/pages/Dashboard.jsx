@@ -123,29 +123,29 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Notícias Verificadas</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.totalNews || 0}</p>
-            </div>
-          </div>
-        </div>
+                 <div className="bg-white p-6 rounded-lg shadow">
+           <div className="flex items-center">
+             <div className="flex-shrink-0">
+               <CheckCircle className="h-8 w-8 text-green-600" />
+             </div>
+             <div className="ml-4">
+               <p className="text-sm font-medium text-gray-500">Notícias Verificadas</p>
+               <p className="text-2xl font-bold text-green-600">{stats?.newsCount || 0}</p>
+             </div>
+           </div>
+         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <XCircle className="h-8 w-8 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Fake News Detectadas</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.fakeNewsCount || 0}</p>
-            </div>
-          </div>
-        </div>
+                 <div className="bg-white p-6 rounded-lg shadow">
+           <div className="flex items-center">
+             <div className="flex-shrink-0">
+               <XCircle className="h-8 w-8 text-red-600" />
+             </div>
+             <div className="ml-4">
+               <p className="text-sm font-medium text-gray-500">Fake News Detectadas</p>
+               <p className="text-2xl font-bold text-red-600">{stats?.fakeNewsCount || 0}</p>
+             </div>
+           </div>
+         </div>
       </div>
 
       {/* Charts */}
@@ -225,18 +225,14 @@ export default function Dashboard() {
                     <p className="text-xs text-gray-500">Confiabilidade</p>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${(parseFloat(analysis.credibility) || 0) < 0.4
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${(parseFloat(analysis.credibility) || 0) < 0.6
                       ? "bg-red-100 text-red-800"
-                      : (parseFloat(analysis.credibility) || 0) < 0.7
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
+                      : "bg-green-100 text-green-800"
                       }`}
                   >
-                    {(parseFloat(analysis.credibility) || 0) < 0.4
-                      ? "Alto Risco"
-                      : (parseFloat(analysis.credibility) || 0) < 0.7
-                        ? "Médio Risco"
-                        : "Baixo Risco"}
+                    {(parseFloat(analysis.credibility) || 0) < 0.6
+                      ? "Não Confiável"
+                      : "Confiável"}
                   </span>
                 </div>
               </div>
