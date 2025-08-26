@@ -150,7 +150,7 @@ class RealTimeService {
   async getNetworkData() {
     try {
       console.log('🔍 Buscando dados da rede...');
-      
+
       // Dados para o grafo de fontes
       const sourcesResult = await query(`
         SELECT 
@@ -169,7 +169,7 @@ class RealTimeService {
         id: row.id,
         name: row.nome,
         site: row.site,
-        credibility: row.peso,
+        credibility: parseFloat(row.peso) || 0.5,
         type: row.tipo,
         nodeType: 'source'
       }));
@@ -194,14 +194,14 @@ class RealTimeService {
         name: row.title.substring(0, 30) + (row.title.length > 30 ? '...' : ''),
         content: row.content,
         isFakeNews: row.is_fake_news,
-        confidence: row.confidence,
+        confidence: parseFloat(row.confidence) || 0.5,
         riskLevel: row.risk_level,
         nodeType: 'news'
       }));
 
       // Gerar conexões entre fontes baseadas em similaridade de credibilidade
       const sourceConnections = this.generateSourceConnections(sourcesNodes);
-      
+
       // Gerar conexões entre notícias baseadas em similaridade de conteúdo e credibilidade
       const newsConnections = this.generateNewsConnections(newsNodes);
 
@@ -338,16 +338,16 @@ class RealTimeService {
    */
   generateSourceConnections(sources) {
     const connections = [];
-    
+
     for (let i = 0; i < sources.length; i++) {
       for (let j = i + 1; j < sources.length; j++) {
         const source1 = sources[i];
         const source2 = sources[j];
-        
+
         // Calcular similaridade de credibilidade (0-1)
         const credibilityDiff = Math.abs(source1.credibility - source2.credibility);
         const similarity = 1 - credibilityDiff; // Quanto mais similar, maior o valor
-        
+
         // Conectar se a similaridade for maior que 0.3 (30%)
         if (similarity > 0.3) {
           connections.push({
@@ -360,7 +360,7 @@ class RealTimeService {
         }
       }
     }
-    
+
     console.log(`🔗 Geradas ${connections.length} conexões entre fontes baseadas em similaridade`);
     return connections;
   }
@@ -370,22 +370,22 @@ class RealTimeService {
    */
   generateNewsConnections(news) {
     const connections = [];
-    
+
     for (let i = 0; i < news.length; i++) {
       for (let j = i + 1; j < news.length; j++) {
         const news1 = news[i];
         const news2 = news[j];
-        
+
         // Calcular similaridade de credibilidade
         const confidenceDiff = Math.abs(news1.confidence - news2.confidence);
         const credibilitySimilarity = 1 - confidenceDiff;
-        
+
         // Calcular similaridade de conteúdo (baseado em palavras-chave)
         const contentSimilarity = this.calculateContentSimilarity(news1.content, news2.content);
-        
+
         // Similaridade combinada (média ponderada)
         const combinedSimilarity = (credibilitySimilarity * 0.6) + (contentSimilarity * 0.4);
-        
+
         // Conectar se a similaridade combinada for maior que 0.4 (40%)
         if (combinedSimilarity > 0.4) {
           connections.push({
@@ -402,7 +402,7 @@ class RealTimeService {
         }
       }
     }
-    
+
     console.log(`🔗 Geradas ${connections.length} conexões entre notícias baseadas em similaridade`);
     return connections;
   }
@@ -417,23 +417,23 @@ class RealTimeService {
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
         .filter(word => word.length > 3);
-      
+
       const words2 = content2.toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
         .filter(word => word.length > 3);
-      
+
       // Calcular interseção de palavras
       const set1 = new Set(words1);
       const set2 = new Set(words2);
       const intersection = new Set([...set1].filter(x => set2.has(x)));
-      
+
       // Calcular união de palavras
       const union = new Set([...set1, ...set2]);
-      
+
       // Similaridade Jaccard
       const similarity = union.size > 0 ? intersection.size / union.size : 0;
-      
+
       return similarity;
     } catch (error) {
       console.error('Erro ao calcular similaridade de conteúdo:', error);

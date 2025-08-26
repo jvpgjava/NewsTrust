@@ -220,17 +220,17 @@ export default function Dashboard() {
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {analysis.credibility ? (parseFloat(analysis.credibility) * 100).toFixed(0) : 'N/A'}%
+                      {analysis.credibility && !isNaN(parseFloat(analysis.credibility)) ? (parseFloat(analysis.credibility) * 100).toFixed(0) : 'N/A'}%
                     </p>
                     <p className="text-xs text-gray-500">Confiabilidade</p>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${(parseFloat(analysis.credibility) || 0) < 0.6
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${(!analysis.credibility || isNaN(parseFloat(analysis.credibility)) || parseFloat(analysis.credibility) < 0.6)
                       ? "bg-red-100 text-red-800"
                       : "bg-green-100 text-green-800"
                       }`}
                   >
-                    {(parseFloat(analysis.credibility) || 0) < 0.6
+                    {(!analysis.credibility || isNaN(parseFloat(analysis.credibility)) || parseFloat(analysis.credibility) < 0.6)
                       ? "Não Confiável"
                       : "Confiável"}
                   </span>

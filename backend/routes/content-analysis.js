@@ -9,8 +9,8 @@ const factChecker = new AIFactChecker()
 
 // Schema de validação para análise de conteúdo
 const contentAnalysisSchema = Joi.object({
-    title: Joi.string().min(5).max(500).required(),
-    content: Joi.string().min(20).max(15000).required()
+    title: Joi.string().min(3).max(500).required(),
+    content: Joi.string().min(10).max(15000).required()
 })
 
 /**
@@ -98,9 +98,12 @@ const contentAnalysisSchema = Joi.object({
  */
 router.post('/', async (req, res) => {
     try {
+        console.log('📝 Recebendo dados para análise:', req.body);
+
         const { error, value } = contentAnalysisSchema.validate(req.body)
 
         if (error) {
+            console.log('❌ Erro de validação:', error.details[0].message);
             return res.status(400).json({
                 error: 'Dados inválidos',
                 details: error.details[0].message
@@ -114,37 +117,85 @@ router.post('/', async (req, res) => {
         // Analisar conteúdo usando IA gratuita + busca na web
         const analysis = await factChecker.analyzeContent(title, content)
 
-        console.log('💾 Salvando análise no banco de dados...');
+        console.log('💾 Verificando se análise já existe...');
 
-        // Salvar análise no banco de dados
-        const savedAnalysis = await query(`
-            INSERT INTO analises_conteudo (
-                title, content, is_fake_news, confidence, risk_level, 
-                reasons, recommendations, detailed_analysis, score, 
-                web_results, ai_analysis, search_coverage
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            RETURNING id, created_at
-        `, [
-            title,
-            content,
-            analysis.isFakeNews,
-            analysis.confidence,
-            analysis.riskLevel,
-            analysis.reasons,
-            analysis.recommendations,
-            analysis.detailedAnalysis,
-            analysis.score,
-            JSON.stringify(analysis.webResults),
-            JSON.stringify(analysis.aiAnalysis),
-            analysis.searchCoverage
-        ]);
+        // Verificar se já existe uma análise com o mesmo título e conteúdo
+        const existingAnalysis = await query(`
+            SELECT id, confidence, risk_level, created_at FROM analises_conteudo 
+            WHERE title = $1 AND content = $2
+            ORDER BY created_at DESC LIMIT 1
+        `, [title, content]);
 
-        console.log('✅ Análise salva no banco:', savedAnalysis.rows[0]);
+        let analysisId, finalConfidence, finalRiskLevel, createdAt;
+
+        if (existingAnalysis.rows.length > 0) {
+            // Análise já existe - atualizar dados
+            const existing = existingAnalysis.rows[0];
+            analysisId = existing.id;
+            finalConfidence = analysis.confidence;
+            finalRiskLevel = analysis.riskLevel;
+            createdAt = existing.created_at;
+
+            await query(`
+                UPDATE analises_conteudo 
+                SET is_fake_news = $1, confidence = $2, risk_level = $3, 
+                    reasons = $4, recommendations = $5, detailed_analysis = $6, 
+                    score = $7, web_results = $8, ai_analysis = $9, search_coverage = $10,
+                    updated_at = NOW()
+                WHERE id = $11
+            `, [
+                analysis.isFakeNews,
+                analysis.confidence,
+                analysis.riskLevel,
+                analysis.reasons,
+                analysis.recommendations,
+                analysis.detailedAnalysis,
+                analysis.score,
+                JSON.stringify(analysis.webResults),
+                JSON.stringify(analysis.aiAnalysis),
+                analysis.searchCoverage,
+                analysisId
+            ]);
+
+            console.log('🔄 Análise existente atualizada:', analysisId);
+        } else {
+            // Nova análise - inserir
+            const savedAnalysis = await query(`
+                INSERT INTO analises_conteudo (
+                    title, content, is_fake_news, confidence, risk_level, 
+                    reasons, recommendations, detailed_analysis, score, 
+                    web_results, ai_analysis, search_coverage
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                RETURNING id, created_at
+            `, [
+                title,
+                content,
+                analysis.isFakeNews,
+                analysis.confidence,
+                analysis.riskLevel,
+                analysis.reasons,
+                analysis.recommendations,
+                analysis.detailedAnalysis,
+                analysis.score,
+                JSON.stringify(analysis.webResults),
+                JSON.stringify(analysis.aiAnalysis),
+                analysis.searchCoverage
+            ]);
+
+            analysisId = savedAnalysis.rows[0].id;
+            finalConfidence = analysis.confidence;
+            finalRiskLevel = analysis.riskLevel;
+            createdAt = savedAnalysis.rows[0].created_at;
+
+            console.log('✅ Nova análise salva no banco:', analysisId);
+        }
 
         const response = {
-            id: savedAnalysis.rows[0].id,
+            id: analysisId,
             ...analysis,
-            timestamp: savedAnalysis.rows[0].created_at.toISOString()
+            confidence: finalConfidence,
+            riskLevel: finalRiskLevel,
+            timestamp: createdAt.toISOString()
         }
 
         console.log('✅ Análise de conteúdo concluída:', {

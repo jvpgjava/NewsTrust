@@ -167,18 +167,22 @@ export default function NetworkVisualization() {
       .selectAll("line")
       .data(graphData.links)
       .enter().append("line")
-      .attr("stroke", d => {
-        // Cor baseada no tipo de conexão
-        if (d.type === 'credibility_similarity') return "#3B82F6"; // Azul para similaridade de credibilidade
-        if (d.type === 'content_credibility_similarity') return "#10B981"; // Verde para similaridade de conteúdo
-        return "#999"; // Cinza padrão
-      })
+             .attr("stroke", d => {
+         // Cor baseada no tipo de conexão e grafo ativo
+         if (activeGraph === 'sources') {
+           // Para fontes: azul para similaridade de credibilidade
+           return "#3B82F6"; // Azul
+         } else {
+           // Para notícias: roxo para similaridade de conteúdo
+           return "#8B5CF6"; // Roxo
+         }
+       })
       .attr("stroke-opacity", 0.7)
       .attr("stroke-width", d => Math.sqrt(d.weight || 1) * 3)
       .style("cursor", "pointer")
-      .on("mouseover", function(event, d) {
+      .on("mouseover", function (event, d) {
         d3.select(this).attr("stroke-opacity", 1).attr("stroke-width", Math.sqrt(d.weight || 1) * 4);
-        
+
         // Mostrar tooltip com informações da conexão
         const tooltip = d3.select("body").append("div")
           .attr("class", "tooltip")
@@ -190,16 +194,16 @@ export default function NetworkVisualization() {
           .style("font-size", "12px")
           .style("pointer-events", "none")
           .style("z-index", "1000");
-        
+
         tooltip.html(`
           <strong>${d.label}</strong><br/>
           Tipo: ${d.type === 'credibility_similarity' ? 'Similaridade de Credibilidade' : 'Similaridade de Conteúdo'}<br/>
           Peso: ${(d.weight * 100).toFixed(1)}%
         `)
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY - 10) + "px");
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 10) + "px");
       })
-      .on("mouseout", function(event, d) {
+      .on("mouseout", function (event, d) {
         d3.select(this).attr("stroke-opacity", 0.7).attr("stroke-width", Math.sqrt(d.weight || 1) * 3);
         d3.selectAll(".tooltip").remove();
       })
@@ -307,12 +311,24 @@ export default function NetworkVisualization() {
   const getNodeColor = (node) => {
     if (activeGraph === 'sources') {
       const credibility = node.credibility || node.peso || 0.5
-      if (credibility >= 0.6) return "#10B981" // Verde (confiável)
-      return "#EF4444" // Vermelho (não confiável)
+      if (credibility >= 0.8) return "#10B981" // Verde (alta credibilidade)
+      if (credibility >= 0.6) return "#3B82F6" // Azul (média credibilidade)
+      if (credibility >= 0.4) return "#F59E0B" // Amarelo (baixa credibilidade)
+      return "#EF4444" // Vermelho (muito baixa credibilidade)
     } else {
-      // Para notícias, usar baseado em fake news
-      if (node.isFakeNews) return "#EF4444" // Vermelho (fake news)
-      return "#10B981" // Verde (confiável)
+      // Para notícias, usar baseado em confiança
+      const confidence = node.confidence || 0.5
+      if (node.isFakeNews) {
+        // Fake news - cores baseadas na confiança da detecção
+        if (confidence >= 0.8) return "#EF4444" // Vermelho (fake news detectada com alta confiança)
+        if (confidence >= 0.6) return "#F59E0B" // Amarelo (fake news detectada com média confiança)
+        return "#DC2626" // Vermelho escuro (fake news detectada com baixa confiança)
+      } else {
+        // Notícia confiável - cores baseadas na confiança
+        if (confidence >= 0.8) return "#10B981" // Verde (alta confiança)
+        if (confidence >= 0.6) return "#3B82F6" // Azul (média confiança)
+        return "#F59E0B" // Amarelo (baixa confiança)
+      }
     }
   }
 
@@ -406,16 +422,24 @@ export default function NetworkVisualization() {
               <Award className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">
-                {activeGraph === 'sources' ? 'Credibilidade Média' : 'Confiança Média'}
-              </p>
+                             <p className="text-sm font-medium text-gray-500">
+                 {activeGraph === 'sources' ? 'Credibilidade Média' : 'Credibilidade Média'}
+               </p>
               <p className="text-2xl font-bold text-gray-900">
                 {(() => {
                   if (currentGraphData.nodes.length === 0) return "0%";
-                  const avg = currentGraphData.nodes.reduce((acc, node) => {
+                  const validNodes = currentGraphData.nodes.filter(node => {
+                    const credibility = activeGraph === 'sources' ? (node.credibility || node.peso) : (node.confidence);
+                    return credibility !== null && credibility !== undefined && !isNaN(credibility);
+                  });
+
+                  if (validNodes.length === 0) return "0%";
+
+                  const avg = validNodes.reduce((acc, node) => {
                     const credibility = activeGraph === 'sources' ? (node.credibility || node.peso || 0.5) : (node.confidence || 0.5);
                     return acc + credibility;
-                  }, 0) / currentGraphData.nodes.length;
+                  }, 0) / validNodes.length;
+
                   return `${(avg * 100).toFixed(1)}%`;
                 })()}
               </p>
@@ -489,10 +513,10 @@ export default function NetworkVisualization() {
                 <div className="w-4 h-0.5 bg-blue-500"></div>
                 <span className="text-gray-600">Similaridade de Credibilidade (Fontes)</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-0.5 bg-green-500"></div>
-                <span className="text-gray-600">Similaridade de Conteúdo (Notícias)</span>
-              </div>
+                             <div className="flex items-center space-x-2">
+                 <div className="w-4 h-0.5 bg-purple-500"></div>
+                 <span className="text-gray-600">Similaridade de Conteúdo (Notícias)</span>
+               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                 <span className="text-gray-600">Espessura = Força da Conexão</span>
@@ -533,7 +557,7 @@ export default function NetworkVisualization() {
                   <h4 className="font-medium text-gray-900">{selectedNode.name}</h4>
                   <p className="text-sm text-gray-500 flex items-center">
                     <span className="mr-1">{getTypeIcon(selectedNode)}</span>
-                    {activeGraph === 'sources' ? selectedNode.type : (selectedNode.isFakeNews ? 'Fake News' : 'Notícia Confiável')}
+                                         {activeGraph === 'sources' ? selectedNode.type : (selectedNode.isFakeNews ? 'Fake news' : 'Notícia Confiável')}
                   </p>
                 </div>
               </div>
@@ -564,19 +588,19 @@ export default function NetworkVisualization() {
                   </>
                 ) : (
                   <>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Confiança:</span>
-                      <span className="text-sm font-medium">
-                        {((selectedNode.confidence || 0.5) * 100).toFixed(1)}%
-                      </span>
-                    </div>
+                                         <div className="flex justify-between">
+                       <span className="text-sm text-gray-600">Credibilidade:</span>
+                       <span className="text-sm font-medium">
+                         {((selectedNode.confidence || 0.5) * 100).toFixed(1)}%
+                       </span>
+                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Nível de Risco:</span>
-                      <span className="text-sm font-medium">
-                        {selectedNode.riskLevel || 'N/A'}
-                      </span>
-                    </div>
+                                         <div className="flex justify-between">
+                       <span className="text-sm text-gray-600">Nível de Risco:</span>
+                       <span className="text-sm font-medium">
+                         {selectedNode.riskLevel ? selectedNode.riskLevel.charAt(0).toUpperCase() + selectedNode.riskLevel.slice(1).toLowerCase() : 'N/A'}
+                       </span>
+                     </div>
                     {selectedNode.content && (
                       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                         <span className="text-sm text-gray-600">Conteúdo:</span>
@@ -631,9 +655,9 @@ export default function NetworkVisualization() {
                 }
               }).length}
             </div>
-            <div className="text-sm text-gray-600">
-              {activeGraph === 'sources' ? 'Fontes Não Confiáveis' : 'Fake News Detectadas'}
-            </div>
+                         <div className="text-sm text-gray-600">
+               {activeGraph === 'sources' ? 'Fontes Não Confiáveis' : 'Fake news Detectadas'}
+             </div>
           </div>
 
           <div className="text-center">
