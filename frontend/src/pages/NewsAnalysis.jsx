@@ -86,6 +86,22 @@ const NewsAnalysis = () => {
     return <AlertTriangle className="h-5 w-5 text-red-600" />;
   }
 
+  const getConfidenceBgColor = (confidence) => {
+    const value = parseFloat(confidence);
+    if (isNaN(value)) return 'bg-gray-100';
+    if (value >= 0.8) return 'bg-green-100';
+    if (value >= 0.6) return 'bg-yellow-100';
+    return 'bg-red-100';
+  }
+
+  const getConfidenceTextColor = (confidence) => {
+    const value = parseFloat(confidence);
+    if (isNaN(value)) return 'text-gray-600';
+    if (value >= 0.8) return 'text-green-700';
+    if (value >= 0.6) return 'text-yellow-700';
+    return 'text-red-700';
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -221,8 +237,8 @@ const NewsAnalysis = () => {
                                 </div>
                               </div>
 
-                              <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200">
-                                <span className="text-sm font-medium text-green-700">Credibilidade</span>
+                              <div className={`p-6 rounded-xl border ${getConfidenceBgColor(contentResult.confidence)}`}>
+                                <span className={`text-sm font-medium ${getConfidenceTextColor(contentResult.confidence)}`}>Credibilidade</span>
                                 <div className="flex items-center mt-3">
                                   {getConfidenceIcon(contentResult.confidence)}
                                   <p className={`text-3xl font-bold ml-3 ${getConfidenceColor(contentResult.confidence)}`}>
@@ -244,7 +260,7 @@ const NewsAnalysis = () => {
                                         }`}
                                       style={{
                                         width: contentResult.riskLevel === 'BAIXO' ? '25%' :
-                                          contentResult.riskLevel === 'MÉDIO' ? '60%' : '90%'
+                                          contentResult.riskLevel === 'MÉDIO' ? '50%' : '90%'
                                       }}
                                     ></div>
                                   </div>
