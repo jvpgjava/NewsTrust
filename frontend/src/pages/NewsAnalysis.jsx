@@ -102,6 +102,24 @@ const NewsAnalysis = () => {
     return 'text-red-700';
   }
 
+  const getRiskLevelBarColor = (level) => {
+    switch (level) {
+      case 'BAIXO': return 'bg-green-500';
+      case 'MÉDIO': return 'bg-yellow-500';
+      case 'ALTO': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  }
+
+  const getRiskLevelBarWidth = (level) => {
+    switch (level) {
+      case 'BAIXO': return '25%';
+      case 'MÉDIO': return '50%';
+      case 'ALTO': return '90%';
+      default: return '0%';
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -255,12 +273,9 @@ const NewsAnalysis = () => {
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-3">
                                     <div
-                                      className={`h-3 rounded-full transition-all duration-500 ${contentResult.riskLevel === 'BAIXO' ? 'bg-green-500' :
-                                        contentResult.riskLevel === 'MÉDIO' ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
+                                      className={`h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(contentResult.riskLevel)}`}
                                       style={{
-                                        width: contentResult.riskLevel === 'BAIXO' ? '25%' :
-                                          contentResult.riskLevel === 'MÉDIO' ? '50%' : '90%'
+                                        width: getRiskLevelBarWidth(contentResult.riskLevel)
                                       }}
                                     ></div>
                                   </div>
@@ -396,12 +411,9 @@ const NewsAnalysis = () => {
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-3">
                                     <div
-                                      className={`h-3 rounded-full transition-all duration-500 ${sourceResult.riskLevel === 'BAIXO' ? 'bg-green-500' :
-                                        sourceResult.riskLevel === 'MÉDIO' ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
+                                      className={`h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(sourceResult.riskLevel)}`}
                                       style={{
-                                        width: sourceResult.riskLevel === 'BAIXO' ? '25%' :
-                                          sourceResult.riskLevel === 'MÉDIO' ? '60%' : '90%'
+                                        width: getRiskLevelBarWidth(sourceResult.riskLevel)
                                       }}
                                     ></div>
                                   </div>
