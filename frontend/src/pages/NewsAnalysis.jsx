@@ -71,15 +71,19 @@ const NewsAnalysis = () => {
   }
 
   const getConfidenceColor = (confidence) => {
-    if (confidence >= 0.8) return 'text-green-600'
-    if (confidence >= 0.6) return 'text-yellow-600'
-    return 'text-red-600'
+    const value = parseFloat(confidence);
+    if (isNaN(value)) return 'text-gray-600';
+    if (value >= 0.8) return 'text-green-600';
+    if (value >= 0.6) return 'text-yellow-600';
+    return 'text-red-600';
   }
 
   const getConfidenceIcon = (confidence) => {
-    if (confidence >= 0.8) return <Shield className="h-5 w-5 text-green-600" />
-    if (confidence >= 0.6) return <Target className="h-5 w-5 text-yellow-600" />
-    return <AlertTriangle className="h-5 w-5 text-red-600" />
+    const value = parseFloat(confidence);
+    if (isNaN(value)) return <Shield className="h-5 w-5 text-gray-600" />;
+    if (value >= 0.8) return <Shield className="h-5 w-5 text-green-600" />;
+    if (value >= 0.6) return <Target className="h-5 w-5 text-yellow-600" />;
+    return <AlertTriangle className="h-5 w-5 text-red-600" />;
   }
 
   return (
@@ -193,91 +197,98 @@ const NewsAnalysis = () => {
                     {/* Resultados da Análise de Conteúdo */}
                     {contentResult ? (
                       <div className="mt-8 pt-8 border-t border-blue-200">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                          <CheckCircle className="h-6 w-6 mr-3 text-green-600" />
-                          Resultado da Análise
-                        </h3>
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-gradient-to-br from-red-50 to-pink-100 p-4 rounded-xl border border-red-200">
-                              <span className="text-sm font-medium text-red-700">Fake News</span>
-                              <p className="text-xl font-bold text-gray-900 mt-1 flex items-center">
-                                {contentResult.isFakeNews ? (
-                                  <>
-                                    <AlertTriangle className="h-6 w-6 mr-2 text-red-600" /> Sim
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="h-6 w-6 mr-2 text-green-600" /> Não
-                                  </>
-                                )}
-                              </p>
-                            </div>
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+                          <div className="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                              Resultado da Análise
+                            </h3>
+                          </div>
 
-                            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-xl border border-blue-200">
-                              <span className="text-sm font-medium text-blue-700">Confiança</span>
-                              <p className="text-xl font-bold text-gray-900 mt-1 flex items-center">
-                                <TrendingUp className="h-6 w-6 mr-2 text-blue-600" /> {contentResult.confidence && !isNaN(contentResult.confidence) ? Math.round(contentResult.confidence * 100) : 0}%
-                              </p>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
-                              <span className="text-sm font-medium text-gray-700">Nível de Risco</span>
-                              <div className="mt-3">
-                                <div className="mb-2">
-                                  <span className="text-lg font-bold text-gray-900">{contentResult.riskLevel}</span>
+                          <div className="p-6 space-y-6">
+                            <div className="space-y-4">
+                              <div className={`p-6 rounded-xl border ${contentResult.isFakeNews ? 'bg-gradient-to-br from-red-50 to-pink-100 border-red-200' : 'bg-gradient-to-br from-green-50 to-emerald-100 border-green-200'}`}>
+                                <span className={`text-sm font-medium ${contentResult.isFakeNews ? 'text-red-700' : 'text-green-700'}`}>Fake News</span>
+                                <div className="flex items-center mt-3">
+                                  {contentResult.isFakeNews ? (
+                                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                                  ) : (
+                                    <CheckCircle className="h-6 w-6 text-green-600" />
+                                  )}
+                                  <p className="text-3xl font-bold ml-3 text-gray-900">
+                                    {contentResult.isFakeNews ? 'Sim' : 'Não'}
+                                  </p>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-3">
-                                  <div
-                                    className={`h-3 rounded-full transition-all duration-500 ${contentResult.riskLevel === 'BAIXO' ? 'bg-green-500' :
-                                      contentResult.riskLevel === 'MÉDIO' ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
-                                    style={{
-                                      width: contentResult.riskLevel === 'BAIXO' ? '25%' :
-                                        contentResult.riskLevel === 'MÉDIO' ? '60%' : '90%'
-                                    }}
-                                  ></div>
+                              </div>
+
+                              <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200">
+                                <span className="text-sm font-medium text-green-700">Credibilidade</span>
+                                <div className="flex items-center mt-3">
+                                  {getConfidenceIcon(contentResult.confidence)}
+                                  <p className={`text-3xl font-bold ml-3 ${getConfidenceColor(contentResult.confidence)}`}>
+                                    {contentResult.confidence && !isNaN(contentResult.confidence) ? Math.round(contentResult.confidence * 100) : 0}%
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                                <span className="text-sm font-medium text-gray-700">Nível de Risco</span>
+                                <div className="mt-3">
+                                  <div className="mb-2">
+                                    <span className="text-lg font-bold text-gray-900">{contentResult.riskLevel?.toUpperCase()}</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-3">
+                                    <div
+                                      className={`h-3 rounded-full transition-all duration-500 ${contentResult.riskLevel === 'BAIXO' ? 'bg-green-500' :
+                                        contentResult.riskLevel === 'MÉDIO' ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
+                                      style={{
+                                        width: contentResult.riskLevel === 'BAIXO' ? '25%' :
+                                          contentResult.riskLevel === 'MÉDIO' ? '60%' : '90%'
+                                      }}
+                                    ></div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl border border-blue-200">
-                            <h4 className="font-semibold text-xl text-gray-900 mb-3 flex items-center">
-                              <Target className="h-6 w-6 mr-2 text-blue-600" />
-                              Razões
-                            </h4>
-                            <ul className="list-disc list-inside text-base text-gray-700 space-y-1">
-                              {Array.isArray(contentResult.reasons) ? contentResult.reasons.map((reason, index) => (
-                                <li key={index}>{reason}</li>
-                              )) : (
-                                <li>Análise concluída</li>
-                              )}
-                            </ul>
-                          </div>
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-xl border border-blue-200">
+                              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                <Target className="h-4 w-4 mr-2 text-blue-600" />
+                                Razões
+                              </h4>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {Array.isArray(contentResult.reasons) ? contentResult.reasons.map((reason, index) => (
+                                  <li key={index}>{reason}</li>
+                                )) : (
+                                  <li>Análise concluída</li>
+                                )}
+                              </ul>
+                            </div>
 
-                          <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200">
-                            <h4 className="font-semibold text-xl text-gray-900 mb-3 flex items-center">
-                              <Shield className="h-6 w-6 mr-2 text-green-600" />
-                              Recomendações
-                            </h4>
-                            <ul className="list-disc list-inside text-base text-gray-700 space-y-1">
-                              {Array.isArray(contentResult.recommendations) ? contentResult.recommendations.map((rec, index) => (
-                                <li key={index}>{rec}</li>
-                              )) : (
-                                <li>Verificar fontes confiáveis</li>
-                              )}
-                            </ul>
-                          </div>
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-4 rounded-xl border border-green-200">
+                              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                <Shield className="h-4 w-4 mr-2 text-green-600" />
+                                Recomendações
+                              </h4>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {Array.isArray(contentResult.recommendations) ? contentResult.recommendations.map((rec, index) => (
+                                  <li key={index}>{rec}</li>
+                                )) : (
+                                  <li>Verificar fontes confiáveis</li>
+                                )}
+                              </ul>
+                            </div>
 
-                          <div className="bg-gradient-to-br from-purple-50 to-pink-100 p-6 rounded-xl border border-purple-200">
-                            <h4 className="font-semibold text-xl text-gray-900 mb-3 flex items-center">
-                              <Zap className="h-6 w-6 mr-2 text-purple-600" />
-                              Análise Detalhada
-                            </h4>
-                            <p className="text-base text-gray-700 leading-relaxed">
-                              Análise na Web + IA - Resultados: {contentResult.webResults?.totalResults || 0}
-                            </p>
+                            <div className="bg-gradient-to-br from-purple-50 to-pink-100 p-4 rounded-xl border border-purple-200">
+                              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                <Zap className="h-4 w-4 mr-2 text-purple-600" />
+                                Análise Detalhada
+                              </h4>
+                              <p className="text-sm text-gray-700">
+                                Análise na Web + IA - Resultados: {contentResult.webResults?.totalResults || 0}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -365,7 +376,7 @@ const NewsAnalysis = () => {
                                 <span className="text-sm font-medium text-gray-700">Nível de Risco</span>
                                 <div className="mt-3">
                                   <div className="mb-2">
-                                    <span className="text-lg font-bold text-gray-900">{sourceResult.riskLevel}</span>
+                                    <span className="text-lg font-bold text-gray-900">{sourceResult.riskLevel?.toUpperCase()}</span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-3">
                                     <div
