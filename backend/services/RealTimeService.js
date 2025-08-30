@@ -57,10 +57,6 @@ class RealTimeService {
       const sourcesResult = await query('SELECT COUNT(*) as count FROM fontes');
       const sourcesCount = parseInt(sourcesResult.rows[0].count);
 
-      // Contar conexões de confiança
-      const connectionsResult = await query('SELECT COUNT(*) as count FROM conexoes_confianca');
-      const connectionsCount = parseInt(connectionsResult.rows[0].count);
-
       // Contar notícias verificadas (análises de conteúdo)
       const newsResult = await query('SELECT COUNT(*) as count FROM analises_conteudo');
       const newsCount = parseInt(newsResult.rows[0].count);
@@ -68,6 +64,10 @@ class RealTimeService {
       // Contar fake news detectadas
       const fakeNewsResult = await query('SELECT COUNT(*) as count FROM analises_conteudo WHERE is_fake_news = true');
       const fakeNewsCount = parseInt(fakeNewsResult.rows[0].count);
+
+      // Gerar conexões dinamicamente para contar
+      const networkData = await this.getNetworkData();
+      const connectionsCount = networkData.sources.connections.length + networkData.news.connections.length;
 
       // Dados de tendência (últimos 6 meses)
       const trendResult = await query(`
@@ -217,8 +217,15 @@ class RealTimeService {
       };
 
       console.log('✅ Dados da rede preparados:', {
-        sources: result.sources.nodes.length,
-        news: result.news.nodes.length
+        sources: {
+          nodes: result.sources.nodes.length,
+          connections: result.sources.connections.length
+        },
+        news: {
+          nodes: result.news.nodes.length,
+          connections: result.news.connections.length
+        },
+        totalConnections: result.sources.connections.length + result.news.connections.length
       });
 
       return result;
@@ -299,10 +306,17 @@ class RealTimeService {
       };
 
       console.log('📨 Mensagem de atualização preparada:', {
-        dashboard: dashboardData.sourcesCount,
+        dashboard: {
+          sources: dashboardData.sourcesCount,
+          news: dashboardData.newsCount,
+          fakeNews: dashboardData.fakeNewsCount,
+          connections: dashboardData.connectionsCount
+        },
         network: {
           sources: networkData.sources.nodes.length,
-          news: networkData.news.nodes.length
+          news: networkData.news.nodes.length,
+          sourceConnections: networkData.sources.connections.length,
+          newsConnections: networkData.news.connections.length
         },
         recentAnalyses: recentAnalyses.length
       });
@@ -311,8 +325,16 @@ class RealTimeService {
       let sentCount = 0;
       this.clients.forEach(client => {
         if (client.readyState === 1) { // WebSocket.OPEN
-          client.send(JSON.stringify(updateMessage));
-          sentCount++;
+          try {
+            client.send(JSON.stringify(updateMessage));
+            sentCount++;
+          } catch (sendError) {
+            console.error('❌ Erro ao enviar para cliente:', sendError);
+            this.clients.delete(client);
+          }
+        } else {
+          // Remover clientes não conectados
+          this.clients.delete(client);
         }
       });
 
@@ -339,6 +361,12 @@ class RealTimeService {
   generateSourceConnections(sources) {
     const connections = [];
 
+    // Se há menos de 2 fontes, não há conexões possíveis
+    if (sources.length < 2) {
+      console.log('🔗 Poucas fontes para gerar conexões');
+      return connections;
+    }
+
     for (let i = 0; i < sources.length; i++) {
       for (let j = i + 1; j < sources.length; j++) {
         const source1 = sources[i];
@@ -348,8 +376,8 @@ class RealTimeService {
         const credibilityDiff = Math.abs(source1.credibility - source2.credibility);
         const similarity = 1 - credibilityDiff; // Quanto mais similar, maior o valor
 
-        // Conectar se a similaridade for maior que 0.3 (30%)
-        if (similarity > 0.3) {
+        // Conectar se a similaridade for maior que 0.1 (10%) - ainda mais permissivo
+        if (similarity > 0.1) {
           connections.push({
             source: source1.id,
             target: source2.id,
@@ -361,7 +389,7 @@ class RealTimeService {
       }
     }
 
-    console.log(`🔗 Geradas ${connections.length} conexões entre fontes baseadas em similaridade`);
+    console.log(`🔗 Geradas ${connections.length} conexões entre ${sources.length} fontes`);
     return connections;
   }
 
@@ -370,6 +398,12 @@ class RealTimeService {
    */
   generateNewsConnections(news) {
     const connections = [];
+
+    // Se há menos de 2 notícias, não há conexões possíveis
+    if (news.length < 2) {
+      console.log('🔗 Poucas notícias para gerar conexões');
+      return connections;
+    }
 
     for (let i = 0; i < news.length; i++) {
       for (let j = i + 1; j < news.length; j++) {
@@ -386,8 +420,8 @@ class RealTimeService {
         // Similaridade combinada (média ponderada)
         const combinedSimilarity = (credibilitySimilarity * 0.6) + (contentSimilarity * 0.4);
 
-        // Conectar se a similaridade combinada for maior que 0.4 (40%)
-        if (combinedSimilarity > 0.4) {
+        // Conectar se a similaridade combinada for maior que 0.2 (20%) - ainda mais permissivo
+        if (combinedSimilarity > 0.2) {
           connections.push({
             source: news1.id,
             target: news2.id,
@@ -403,7 +437,7 @@ class RealTimeService {
       }
     }
 
-    console.log(`🔗 Geradas ${connections.length} conexões entre notícias baseadas em similaridade`);
+    console.log(`🔗 Geradas ${connections.length} conexões entre ${news.length} notícias`);
     return connections;
   }
 
@@ -412,16 +446,23 @@ class RealTimeService {
    */
   calculateContentSimilarity(content1, content2) {
     try {
-      // Extrair palavras-chave (palavras com mais de 3 caracteres)
+      if (!content1 || !content2) return 0;
+
+      // Extrair palavras-chave (palavras com mais de 2 caracteres)
       const words1 = content1.toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
-        .filter(word => word.length > 3);
+        .filter(word => word.length > 2);
 
       const words2 = content2.toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
-        .filter(word => word.length > 3);
+        .filter(word => word.length > 2);
+
+      // Se não há palavras suficientes, retornar similaridade baixa mas não zero
+      if (words1.length < 2 || words2.length < 2) {
+        return 0.1; // Similaridade mínima
+      }
 
       // Calcular interseção de palavras
       const set1 = new Set(words1);
@@ -434,10 +475,11 @@ class RealTimeService {
       // Similaridade Jaccard
       const similarity = union.size > 0 ? intersection.size / union.size : 0;
 
-      return similarity;
+      // Garantir que sempre há alguma similaridade mínima
+      return Math.max(similarity, 0.05);
     } catch (error) {
       console.error('Erro ao calcular similaridade de conteúdo:', error);
-      return 0;
+      return 0.05; // Similaridade mínima em caso de erro
     }
   }
 }

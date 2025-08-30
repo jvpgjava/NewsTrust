@@ -24,28 +24,58 @@ export default function NetworkVisualization() {
     // Listener para dados iniciais
     const handleInitialData = (data) => {
       console.log('📊 Dados iniciais recebidos:', data);
-      setSourcesGraphData({
-        nodes: data.network.sources.nodes || [],
-        links: data.network.sources.connections || []
-      });
-      setNewsGraphData({
-        nodes: data.network.news.nodes || [],
-        links: data.network.news.connections || []
-      });
+
+      if (data.network) {
+        setSourcesGraphData({
+          nodes: data.network.sources?.nodes || [],
+          links: data.network.sources?.connections || []
+        });
+        setNewsGraphData({
+          nodes: data.network.news?.nodes || [],
+          links: data.network.news?.connections || []
+        });
+
+        console.log('📊 Dados iniciais processados:', {
+          sources: {
+            nodes: data.network.sources?.nodes?.length || 0,
+            connections: data.network.sources?.connections?.length || 0
+          },
+          news: {
+            nodes: data.network.news?.nodes?.length || 0,
+            connections: data.network.news?.connections?.length || 0
+          }
+        });
+      }
+
       setLoading(false);
     };
 
     // Listener para atualizações
     const handleUpdate = (data) => {
       console.log('🔄 Atualização recebida:', data);
-      setSourcesGraphData({
-        nodes: data.network.sources.nodes || [],
-        links: data.network.sources.connections || []
-      });
-      setNewsGraphData({
-        nodes: data.network.news.nodes || [],
-        links: data.network.news.connections || []
-      });
+
+      // Atualizar dados dos grafos
+      if (data.network) {
+        setSourcesGraphData({
+          nodes: data.network.sources?.nodes || [],
+          links: data.network.sources?.connections || []
+        });
+        setNewsGraphData({
+          nodes: data.network.news?.nodes || [],
+          links: data.network.news?.connections || []
+        });
+
+        console.log('📊 Grafos atualizados:', {
+          sources: {
+            nodes: data.network.sources?.nodes?.length || 0,
+            connections: data.network.sources?.connections?.length || 0
+          },
+          news: {
+            nodes: data.network.news?.nodes?.length || 0,
+            connections: data.network.news?.connections?.length || 0
+          }
+        });
+      }
     };
 
     // Adicionar listeners
@@ -62,7 +92,17 @@ export default function NetworkVisualization() {
 
   useEffect(() => {
     const currentGraphData = activeGraph === 'sources' ? sourcesGraphData : newsGraphData;
+    console.log(`🎯 Recriando visualização para grafo ${activeGraph}:`, {
+      nodes: currentGraphData.nodes.length,
+      links: currentGraphData.links.length
+    });
+
     if (currentGraphData.nodes.length > 0) {
+      // Parar simulação anterior se existir
+      if (simulation) {
+        simulation.stop();
+      }
+
       createVisualization(currentGraphData);
     }
   }, [sourcesGraphData, newsGraphData, activeGraph]);
@@ -130,6 +170,11 @@ export default function NetworkVisualization() {
   }
 
   const createVisualization = (graphData) => {
+    console.log('🎨 Criando visualização com dados:', {
+      nodes: graphData.nodes.length,
+      links: graphData.links.length
+    });
+
     const svg = d3.select(svgRef.current)
     svg.selectAll("*").remove()
 
@@ -142,6 +187,8 @@ export default function NetworkVisualization() {
     svg.attr("viewBox", `0 0 ${width} ${height}`)
     svg.attr("preserveAspectRatio", "xMidYMid meet")
 
+    const g = svg.append("g")
+
     const zoom = d3.zoom()
       .scaleExtent([0.1, 2.0])
       .on("zoom", (event) => {
@@ -150,8 +197,6 @@ export default function NetworkVisualization() {
       })
 
     svg.call(zoom)
-
-    const g = svg.append("g")
 
     // Create force simulation
     const simulation = d3.forceSimulation(graphData.nodes)
@@ -167,16 +212,16 @@ export default function NetworkVisualization() {
       .selectAll("line")
       .data(graphData.links)
       .enter().append("line")
-             .attr("stroke", d => {
-         // Cor baseada no tipo de conexão e grafo ativo
-         if (activeGraph === 'sources') {
-           // Para fontes: azul para similaridade de credibilidade
-           return "#3B82F6"; // Azul
-         } else {
-           // Para notícias: roxo para similaridade de conteúdo
-           return "#8B5CF6"; // Roxo
-         }
-       })
+      .attr("stroke", d => {
+        // Cor baseada no tipo de conexão e grafo ativo
+        if (activeGraph === 'sources') {
+          // Para fontes: azul para similaridade de credibilidade
+          return "#3B82F6"; // Azul
+        } else {
+          // Para notícias: roxo para similaridade de conteúdo
+          return "#8B5CF6"; // Roxo
+        }
+      })
       .attr("stroke-opacity", 0.7)
       .attr("stroke-width", d => Math.sqrt(d.weight || 1) * 3)
       .style("cursor", "pointer")
@@ -422,9 +467,9 @@ export default function NetworkVisualization() {
               <Award className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-4">
-                             <p className="text-sm font-medium text-gray-500">
-                 {activeGraph === 'sources' ? 'Credibilidade Média' : 'Credibilidade Média'}
-               </p>
+              <p className="text-sm font-medium text-gray-500">
+                {activeGraph === 'sources' ? 'Credibilidade Média' : 'Credibilidade Média'}
+              </p>
               <p className="text-2xl font-bold text-gray-900">
                 {(() => {
                   if (currentGraphData.nodes.length === 0) return "0%";
@@ -513,10 +558,10 @@ export default function NetworkVisualization() {
                 <div className="w-4 h-0.5 bg-blue-500"></div>
                 <span className="text-gray-600">Similaridade de Credibilidade (Fontes)</span>
               </div>
-                             <div className="flex items-center space-x-2">
-                 <div className="w-4 h-0.5 bg-purple-500"></div>
-                 <span className="text-gray-600">Similaridade de Conteúdo (Notícias)</span>
-               </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-0.5 bg-purple-500"></div>
+                <span className="text-gray-600">Similaridade de Conteúdo (Notícias)</span>
+              </div>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                 <span className="text-gray-600">Espessura = Força da Conexão</span>
@@ -557,7 +602,7 @@ export default function NetworkVisualization() {
                   <h4 className="font-medium text-gray-900">{selectedNode.name}</h4>
                   <p className="text-sm text-gray-500 flex items-center">
                     <span className="mr-1">{getTypeIcon(selectedNode)}</span>
-                                         {activeGraph === 'sources' ? selectedNode.type : (selectedNode.isFakeNews ? 'Fake news' : 'Notícia Confiável')}
+                    {activeGraph === 'sources' ? selectedNode.type : (selectedNode.isFakeNews ? 'Fake news' : 'Notícia Confiável')}
                   </p>
                 </div>
               </div>
@@ -588,19 +633,19 @@ export default function NetworkVisualization() {
                   </>
                 ) : (
                   <>
-                                         <div className="flex justify-between">
-                       <span className="text-sm text-gray-600">Credibilidade:</span>
-                       <span className="text-sm font-medium">
-                         {((selectedNode.confidence || 0.5) * 100).toFixed(1)}%
-                       </span>
-                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Credibilidade:</span>
+                      <span className="text-sm font-medium">
+                        {((selectedNode.confidence || 0.5) * 100).toFixed(1)}%
+                      </span>
+                    </div>
 
-                                         <div className="flex justify-between">
-                       <span className="text-sm text-gray-600">Nível de Risco:</span>
-                       <span className="text-sm font-medium">
-                         {selectedNode.riskLevel ? selectedNode.riskLevel.charAt(0).toUpperCase() + selectedNode.riskLevel.slice(1).toLowerCase() : 'N/A'}
-                       </span>
-                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Nível de Risco:</span>
+                      <span className="text-sm font-medium">
+                        {selectedNode.riskLevel ? selectedNode.riskLevel.charAt(0).toUpperCase() + selectedNode.riskLevel.slice(1).toLowerCase() : 'N/A'}
+                      </span>
+                    </div>
                     {selectedNode.content && (
                       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                         <span className="text-sm text-gray-600">Conteúdo:</span>
@@ -655,9 +700,9 @@ export default function NetworkVisualization() {
                 }
               }).length}
             </div>
-                         <div className="text-sm text-gray-600">
-               {activeGraph === 'sources' ? 'Fontes Não Confiáveis' : 'Fake news Detectadas'}
-             </div>
+            <div className="text-sm text-gray-600">
+              {activeGraph === 'sources' ? 'Fontes Não Confiáveis' : 'Fake news Detectadas'}
+            </div>
           </div>
 
           <div className="text-center">
