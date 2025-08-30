@@ -376,9 +376,10 @@ class RealTimeService {
         const credibilityDiff = Math.abs(source1.credibility - source2.credibility);
         const similarity = 1 - credibilityDiff; // Quanto mais similar, maior o valor
 
-        // Conectar APENAS se a similaridade de credibilidade for maior que 0.3 (30%)
+        // Conectar APENAS se a similaridade de credibilidade for maior que 0.7 (70%)
         // Isso garante que apenas fontes com credibilidade realmente similar se conectem
-        if (similarity > 0.3) {
+        if (similarity > 0.7) {
+          console.log(`🔗 Conectando fontes: ${source1.name} (${(source1.credibility * 100).toFixed(0)}%) ↔ ${source2.name} (${(source2.credibility * 100).toFixed(0)}%) - Similaridade: ${(similarity * 100).toFixed(0)}%`);
           connections.push({
             source: source1.id,
             target: source2.id,
@@ -386,6 +387,8 @@ class RealTimeService {
             type: 'credibility_similarity',
             label: `Similaridade: ${(similarity * 100).toFixed(0)}%`
           });
+        } else {
+          console.log(`❌ Não conectando: ${source1.name} (${(source1.credibility * 100).toFixed(0)}%) ↔ ${source2.name} (${(source2.credibility * 100).toFixed(0)}%) - Similaridade: ${(similarity * 100).toFixed(0)}% (muito baixa)`);
         }
       }
     }
