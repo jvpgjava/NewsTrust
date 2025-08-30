@@ -345,17 +345,26 @@ class ExternalSourceAnalyzer {
         if (match) {
           const age = match[1].trim();
           // Verificar se é uma idade válida (contém números e não tem palavras inválidas)
-          if (age && 
-              age.length > 0 && 
-              age.length < 50 && 
-              !age.includes('unknown') && 
-              !age.includes('content') && 
-              !age.includes('width') && 
-              !age.includes('height') && 
-              !age.includes('style') && 
-              !age.includes('class') && 
-              /\d/.test(age)) {
+          if (age &&
+            age.length > 0 &&
+            age.length < 50 &&
+            !age.includes('unknown') &&
+            !age.includes('content') &&
+            !age.includes('width') &&
+            !age.includes('height') &&
+            !age.includes('style') &&
+            !age.includes('class') &&
+            !age.includes('png') &&
+            !age.includes('jpg') &&
+            !age.includes('jpeg') &&
+            !age.includes('gif') &&
+            !age.includes('svg') &&
+            !age.includes('_') &&
+            !age.includes('x') &&
+            /\d/.test(age) &&
+            /[a-zA-Z]/.test(age)) { // Deve conter pelo menos uma letra
             data.domainAge = age;
+            console.log(`📅 Idade do domínio extraída: ${age}`);
             break;
           }
         }
@@ -383,6 +392,12 @@ class ExternalSourceAnalyzer {
       // Se não conseguimos extrair dados válidos, usar dados padrão
       if (data.trustScore < 10) {
         return this.getDefaultScamAdviserData(domain);
+      }
+
+      // Se não conseguiu extrair idade do domínio, definir como "Desconhecida"
+      if (!data.domainAge) {
+        data.domainAge = "Desconhecida";
+        console.log(`⚠️ Idade do domínio não encontrada para ${domain}, definindo como "Desconhecida"`);
       }
 
       return data;
