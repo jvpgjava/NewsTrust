@@ -53,20 +53,42 @@ const NewsAnalysis = () => {
   }
 
   const getRiskLevelColor = (level) => {
-    switch (level) {
-      case 'BAIXO': return 'text-green-600 bg-green-50 border-green-200'
-      case 'MÉDIO': return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-      case 'ALTO': return 'text-red-600 bg-red-50 border-red-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
+    if (!level) return 'text-gray-600 bg-gray-50 border-gray-200';
+
+    const normalizedLevel = level.toUpperCase();
+    switch (normalizedLevel) {
+      case 'BAIXO':
+      case 'LOW':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'MÉDIO':
+      case 'MEDIO':
+      case 'MEDIUM':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'ALTO':
+      case 'HIGH':
+        return 'text-red-600 bg-red-50 border-red-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   }
 
   const getRiskLevelBgColor = (level) => {
-    switch (level) {
-      case 'BAIXO': return 'from-green-50 to-emerald-100 border-green-200'
-      case 'MÉDIO': return 'from-yellow-50 to-orange-100 border-yellow-200'
-      case 'ALTO': return 'from-red-50 to-red-100 border-red-200'
-      default: return 'from-gray-50 to-gray-100 border-gray-200'
+    if (!level) return 'from-gray-50 to-gray-100 border-gray-200';
+
+    const normalizedLevel = level.toUpperCase();
+    switch (normalizedLevel) {
+      case 'BAIXO':
+      case 'LOW':
+        return 'from-green-50 to-emerald-100 border-green-200';
+      case 'MÉDIO':
+      case 'MEDIO':
+      case 'MEDIUM':
+        return 'from-yellow-50 to-orange-100 border-yellow-200';
+      case 'ALTO':
+      case 'HIGH':
+        return 'from-red-50 to-red-100 border-red-200';
+      default:
+        return 'from-gray-50 to-gray-100 border-gray-200';
     }
   }
 
@@ -103,20 +125,42 @@ const NewsAnalysis = () => {
   }
 
   const getRiskLevelBarColor = (level) => {
-    switch (level) {
-      case 'BAIXO': return 'bg-green-500';
-      case 'MÉDIO': return 'bg-yellow-500';
-      case 'ALTO': return 'bg-red-500';
-      default: return 'bg-gray-500';
+    if (!level) return 'bg-gray-500';
+
+    const normalizedLevel = level.toUpperCase();
+    switch (normalizedLevel) {
+      case 'BAIXO':
+      case 'LOW':
+        return 'bg-green-500';
+      case 'MÉDIO':
+      case 'MEDIO':
+      case 'MEDIUM':
+        return 'bg-yellow-500';
+      case 'ALTO':
+      case 'HIGH':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
     }
   }
 
   const getRiskLevelBarWidth = (level) => {
-    switch (level) {
-      case 'BAIXO': return '25%';
-      case 'MÉDIO': return '50%';
-      case 'ALTO': return '90%';
-      default: return '0%';
+    if (!level) return '0%';
+
+    const normalizedLevel = level.toUpperCase();
+    switch (normalizedLevel) {
+      case 'BAIXO':
+      case 'LOW':
+        return '25%';
+      case 'MÉDIO':
+      case 'MEDIO':
+      case 'MEDIUM':
+        return '50%';
+      case 'ALTO':
+      case 'HIGH':
+        return '90%';
+      default:
+        return '0%';
     }
   }
 
@@ -241,20 +285,6 @@ const NewsAnalysis = () => {
 
                           <div className="p-6 space-y-6">
                             <div className="space-y-4">
-                              <div className={`p-6 rounded-xl border ${contentResult.isFakeNews ? 'bg-gradient-to-br from-red-50 to-pink-100 border-red-200' : 'bg-gradient-to-br from-green-50 to-emerald-100 border-green-200'}`}>
-                                <span className={`text-sm font-medium ${contentResult.isFakeNews ? 'text-red-700' : 'text-green-700'}`}>Fake News</span>
-                                <div className="flex items-center mt-3">
-                                  {contentResult.isFakeNews ? (
-                                    <AlertTriangle className="h-6 w-6 text-red-600" />
-                                  ) : (
-                                    <CheckCircle className="h-6 w-6 text-green-600" />
-                                  )}
-                                  <p className="text-3xl font-bold ml-3 text-gray-900">
-                                    {contentResult.isFakeNews ? 'Sim' : 'Não'}
-                                  </p>
-                                </div>
-                              </div>
-
                               <div className={`p-6 rounded-xl border ${getConfidenceBgColor(contentResult.confidence)}`}>
                                 <span className={`text-sm font-medium ${getConfidenceTextColor(contentResult.confidence)}`}>Credibilidade</span>
                                 <div className="flex items-center mt-3">
@@ -265,11 +295,13 @@ const NewsAnalysis = () => {
                                 </div>
                               </div>
 
-                              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                              <div className="bg-white p-6 rounded-xl border border-gray-200">
                                 <span className="text-sm font-medium text-gray-700">Nível de Risco</span>
                                 <div className="mt-3">
                                   <div className="mb-2">
-                                    <span className="text-lg font-bold text-gray-900">{contentResult.riskLevel?.toUpperCase()}</span>
+                                    <span className="text-lg font-bold text-gray-900">
+                                      {contentResult.riskLevel ? contentResult.riskLevel.toUpperCase() : 'N/A'}
+                                    </span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-3">
                                     <div
@@ -386,15 +418,15 @@ const NewsAnalysis = () => {
 
                           <div className="p-6 space-y-6">
                             <div className="space-y-4">
-                              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl border border-blue-200">
-                                <span className="text-sm font-medium text-blue-700">Domínio</span>
+                              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                                <span className="text-sm font-medium text-gray-700">Domínio</span>
                                 <p className="text-xl font-bold text-gray-900 mt-2 break-all">
                                   {sourceResult.domain}
                                 </p>
                               </div>
 
-                              <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200">
-                                <span className="text-sm font-medium text-green-700">Credibilidade</span>
+                              <div className={`p-6 rounded-xl border ${getConfidenceBgColor(sourceResult.credibility)}`}>
+                                <span className={`text-sm font-medium ${getConfidenceTextColor(sourceResult.credibility)}`}>Credibilidade</span>
                                 <div className="flex items-center mt-3">
                                   {getConfidenceIcon(sourceResult.credibility)}
                                   <p className={`text-3xl font-bold ml-3 ${getConfidenceColor(sourceResult.credibility)}`}>
@@ -403,11 +435,13 @@ const NewsAnalysis = () => {
                                 </div>
                               </div>
 
-                              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                              <div className="bg-white p-6 rounded-xl border border-gray-200">
                                 <span className="text-sm font-medium text-gray-700">Nível de Risco</span>
                                 <div className="mt-3">
                                   <div className="mb-2">
-                                    <span className="text-lg font-bold text-gray-900">{sourceResult.riskLevel?.toUpperCase()}</span>
+                                    <span className="text-lg font-bold text-gray-900">
+                                      {sourceResult.riskLevel ? sourceResult.riskLevel.toUpperCase() : 'N/A'}
+                                    </span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-3">
                                     <div
