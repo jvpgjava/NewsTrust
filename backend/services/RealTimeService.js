@@ -356,7 +356,7 @@ class RealTimeService {
   }
 
   /**
-   * Gera conexões entre fontes baseadas em similaridade de credibilidade
+   * Gera conexões entre fontes baseadas APENAS em similaridade de credibilidade
    */
   generateSourceConnections(sources) {
     const connections = [];
@@ -376,8 +376,9 @@ class RealTimeService {
         const credibilityDiff = Math.abs(source1.credibility - source2.credibility);
         const similarity = 1 - credibilityDiff; // Quanto mais similar, maior o valor
 
-        // Conectar se a similaridade for maior que 0.1 (10%) - ainda mais permissivo
-        if (similarity > 0.1) {
+        // Conectar APENAS se a similaridade de credibilidade for maior que 0.3 (30%)
+        // Isso garante que apenas fontes com credibilidade realmente similar se conectem
+        if (similarity > 0.3) {
           connections.push({
             source: source1.id,
             target: source2.id,
@@ -389,12 +390,12 @@ class RealTimeService {
       }
     }
 
-    console.log(`🔗 Geradas ${connections.length} conexões entre ${sources.length} fontes`);
+    console.log(`🔗 Geradas ${connections.length} conexões entre ${sources.length} fontes (baseadas em credibilidade similar)`);
     return connections;
   }
 
   /**
-   * Gera conexões entre notícias baseadas em similaridade de conteúdo e credibilidade
+   * Gera conexões entre notícias baseadas APENAS em similaridade de conteúdo
    */
   generateNewsConnections(news) {
     const connections = [];
@@ -410,34 +411,23 @@ class RealTimeService {
         const news1 = news[i];
         const news2 = news[j];
 
-        // Calcular similaridade de credibilidade
-        const confidenceDiff = Math.abs(news1.confidence - news2.confidence);
-        const credibilitySimilarity = 1 - confidenceDiff;
-
         // Calcular similaridade de conteúdo (baseado em palavras-chave)
         const contentSimilarity = this.calculateContentSimilarity(news1.content, news2.content);
 
-        // Similaridade combinada (média ponderada)
-        const combinedSimilarity = (credibilitySimilarity * 0.6) + (contentSimilarity * 0.4);
-
-        // Conectar se a similaridade combinada for maior que 0.2 (20%) - ainda mais permissivo
-        if (combinedSimilarity > 0.2) {
+        // Conectar se a similaridade de conteúdo for maior que 0.2 (20%)
+        if (contentSimilarity > 0.2) {
           connections.push({
             source: news1.id,
             target: news2.id,
-            weight: combinedSimilarity,
-            type: 'content_credibility_similarity',
-            label: `Similaridade: ${(combinedSimilarity * 100).toFixed(0)}%`,
-            details: {
-              credibilitySimilarity: credibilitySimilarity,
-              contentSimilarity: contentSimilarity
-            }
+            weight: contentSimilarity,
+            type: 'content_similarity',
+            label: `Similaridade: ${(contentSimilarity * 100).toFixed(0)}%`
           });
         }
       }
     }
 
-    console.log(`🔗 Geradas ${connections.length} conexões entre ${news.length} notícias`);
+    console.log(`🔗 Geradas ${connections.length} conexões entre ${news.length} notícias (baseadas em conteúdo)`);
     return connections;
   }
 

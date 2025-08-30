@@ -554,18 +554,17 @@ export default function NetworkVisualization() {
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Conexões por Similaridade:</h4>
             <div className="flex flex-wrap gap-4 text-xs">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-0.5 bg-blue-500"></div>
-                <span className="text-gray-600">Similaridade de Credibilidade (Fontes)</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-0.5 bg-purple-500"></div>
-                <span className="text-gray-600">Similaridade de Conteúdo (Notícias)</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <span className="text-gray-600">Espessura = Força da Conexão</span>
-              </div>
+              {activeGraph === 'sources' ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-0.5 bg-blue-500"></div>
+                  <span className="text-gray-600">Similaridade de Credibilidade</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-0.5 bg-purple-500"></div>
+                  <span className="text-gray-600">Similaridade de Conteúdo</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -578,7 +577,7 @@ export default function NetworkVisualization() {
             <p>
               <strong>Instruções:</strong> Use a roda do mouse para zoom in/out. Clique e arraste para mover o grafo.
               Clique e arraste os nós para reorganizar. Clique em um nó para ver detalhes.
-              O tamanho dos nós representa a credibilidade, e a espessura das linhas representa o peso da confiança.
+              O tamanho dos nós representa a credibilidade.
             </p>
           </div>
         </div>
@@ -672,7 +671,7 @@ export default function NetworkVisualization() {
       {/* Network Analysis */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Análise da Rede</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {currentGraphData.nodes.filter((n) => {
@@ -705,12 +704,7 @@ export default function NetworkVisualization() {
             </div>
           </div>
 
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {currentGraphData.links.filter((l) => l.weight > 0.7).length}
-            </div>
-            <div className="text-sm text-gray-600">Conexões Fortes</div>
-          </div>
+
         </div>
       </div>
     </div>
