@@ -22,12 +22,14 @@ class AIFactChecker {
     async analyzeContent(title, content) {
         try {
             console.log('🤖 Iniciando análise com Groq e Perplexity...')
-
+            
             // Busca na web
             const webResults = await this.searchWeb(title, content)
 
             // Análise com APIs (Groq primeiro, depois Perplexity)
+            console.log('🤖 Iniciando análise com APIs...');
             const aiAnalysis = await this.analyzeWithAPIs(title, content, webResults)
+            console.log('🤖 Análise da IA concluída:', aiAnalysis);
 
             // Combinar resultados
             const combinedAnalysis = this.combineResults(webResults, aiAnalysis)

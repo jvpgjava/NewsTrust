@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Brain, Globe, CheckCircle, AlertTriangle, Clock, TrendingUp, Shield, Target, Zap } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { Brain, Globe, CheckCircle, AlertTriangle, Clock, TrendingUp, Shield, Target, Zap, Upload, FileText, X, Trash2 } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
@@ -20,12 +20,97 @@ const NewsAnalysis = () => {
     url: ''
   })
 
+  // Estados para upload de arquivo
+  const [uploadedFile, setUploadedFile] = useState(null)
+  const [fileContent, setFileContent] = useState('')
+  const fileInputRef = useRef(null)
+
+  const handleFileUpload = async (file) => {
+    const allowedTypes = [
+      'text/plain', 
+      'application/pdf', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      // Tipos de imagem
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/gif',
+      'image/bmp',
+      'image/webp',
+      'image/tiff'
+    ]
+    const maxSize = 5 * 1024 * 1024 // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Tipo de arquivo não suportado. Use PDF, TXT, DOCX ou imagens (JPEG, PNG, etc.).')
+      return
+    }
+
+    if (file.size > maxSize) {
+      toast.error('Arquivo muito grande. Tamanho máximo: 5MB')
+      return
+    }
+
+    setUploadedFile(file)
+    
+    // Se for um arquivo de texto, ler o conteúdo
+    if (file.type === 'text/plain') {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const content = e.target.result
+        setFileContent(content)
+        setContentData(prev => ({
+          ...prev,
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          content: content
+        }))
+      }
+      reader.readAsText(file)
+    } else {
+      // Para PDF e DOCX, apenas definir o título - conteúdo será extraído no backend
+      setContentData(prev => ({
+        ...prev,
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        content: "" // Limpar conteúdo para forçar extração do arquivo
+      }))
+    }
+  }
+
+  const removeFile = () => {
+    setUploadedFile(null)
+    setFileContent('')
+    setContentData(prev => ({
+      ...prev,
+      title: '',
+      content: ''
+    }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   const handleContentSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:3001/api/content-analysis', contentData)
+      let response
+      
+      if (uploadedFile) {
+        // Upload de arquivo para análise
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        
+        response = await axios.post('http://localhost:3001/api/file-upload/analyze-file', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+      } else {
+        // Análise de conteúdo manual
+        response = await axios.post('http://localhost:3001/api/content-analysis', contentData)
+      }
+      
       setContentResult(response.data)
       toast.success('Análise de conteúdo concluída!')
     } catch (error) {
@@ -50,6 +135,19 @@ const NewsAnalysis = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const clearContentForm = () => {
+    setContentData({ title: '', content: '' })
+    setContentResult(null)
+    removeFile()
+    toast.success('Formulário de conteúdo limpo!')
+  }
+
+  const clearSourceForm = () => {
+    setSourceData({ url: '' })
+    setSourceResult(null)
+    toast.success('Formulário de fonte limpo!')
   }
 
   const getRiskLevelColor = (level) => {
@@ -165,18 +263,18 @@ const NewsAnalysis = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full mb-6">
             <Zap className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-4">
             Análise de Notícias
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Analise a credibilidade de fontes e o conteúdo de notícias usando IA avançada
+            Analise a credibilidade de fontes e o conteúdo de notícias
           </p>
         </div>
 
@@ -187,7 +285,7 @@ const NewsAnalysis = () => {
               <button
                 onClick={() => setActiveTab('content')}
                 className={`flex-1 flex items-center justify-center py-4 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${activeTab === 'content'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                   }`}
               >
@@ -201,7 +299,7 @@ const NewsAnalysis = () => {
               <button
                 onClick={() => setActiveTab('source')}
                 className={`flex-1 flex items-center justify-center py-4 px-6 rounded-lg font-medium text-sm transition-all duration-300 ${activeTab === 'source'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                   }`}
               >
@@ -221,12 +319,71 @@ const NewsAnalysis = () => {
               <div className="w-full">
                 {/* Form and Results */}
                 <div className="space-y-6 w-full">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 w-full">
+                  <div className="bg-white rounded-xl p-8 w-full">
                     <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                      <Brain className="h-6 w-6 mr-3 text-purple-600" />
+                      <Brain className="h-6 w-6 mr-3 text-blue-600" />
                       Análise de Conteúdo
                     </h3>
                     <form onSubmit={handleContentSubmit} className="space-y-6">
+                      {/* Seção de Upload de Arquivo */}
+                      <div className="bg-white p-6 rounded-xl border border-blue-200">
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                          <Upload className="h-5 w-5 mr-2 text-blue-600" />
+                          Upload de Arquivo (Opcional)
+                        </h4>
+                        
+                        {!uploadedFile ? (
+                          <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".pdf,.txt,.docx"
+                              onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0])}
+                              className="hidden"
+                            />
+                            <div className="space-y-3">
+                              <FileText className="h-12 w-12 text-blue-400 mx-auto" />
+                              <div>
+                                <p className="text-lg font-medium text-gray-700">
+                                  Arraste um arquivo aqui ou clique para selecionar
+                                </p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                  Suporta PDF, TXT, DOCX e imagens (JPEG, PNG, etc.) - máx. 5MB
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                              >
+                                Selecionar Arquivo
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-white p-4 rounded-lg border border-green-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <FileText className="h-8 w-8 text-green-600" />
+                                <div>
+                                  <p className="font-medium text-gray-800">{uploadedFile.name}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={removeFile}
+                                className="text-red-500 hover:text-red-700 p-1"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div>
                         <label className="block text-base font-medium text-gray-700 mb-3">
                           Título da Notícia
@@ -249,27 +406,38 @@ const NewsAnalysis = () => {
                           onChange={(e) => setContentData({ ...contentData, content: e.target.value })}
                           rows="8"
                           className="w-full px-5 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-y text-lg"
-                          placeholder="Descreva aqui o conteúdo encontrado..."
-                          required
+                          placeholder={uploadedFile ? "Conteúdo será extraído automaticamente do arquivo (PDF/DOCX) ou análise de imagem..." : "Descreva aqui o conteúdo encontrado..."}
+                          required={!uploadedFile}
                         ></textarea>
                       </div>
-                      <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-5 px-8 rounded-lg font-semibold text-lg shadow-md hover:from-blue-700 hover:to-purple-700 transition duration-300 ease-in-out flex items-center justify-center"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <svg className="animate-spin h-6 w-6 text-white mr-3" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                        ) : (
-                          <>
-                            <Target className="h-6 w-6 mr-3" />
-                            Analisar Conteúdo
-                          </>
-                        )}
-                      </button>
+                      <div className="flex space-x-4">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-5 px-8 rounded-lg font-semibold text-lg shadow-md hover:from-blue-700 hover:to-blue-800 transition duration-300 ease-in-out flex items-center justify-center"
+                          disabled={loading}
+                        >
+                          {loading ? (
+                            <svg className="animate-spin h-6 w-6 text-white mr-3" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          ) : (
+                            <>
+                              <Target className="h-6 w-6 mr-3" />
+                              Analisar Conteúdo
+                            </>
+                          )}
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={clearContentForm}
+                          className="bg-gray-500 text-white py-5 px-6 rounded-lg font-semibold text-lg shadow-md hover:bg-gray-600 transition duration-300 ease-in-out flex items-center justify-center"
+                        >
+                          <Trash2 className="h-5 w-5 mr-2" />
+                          Limpar
+                        </button>
+                      </div>
                     </form>
 
                     {/* Resultados da Análise de Conteúdo */}
@@ -294,6 +462,46 @@ const NewsAnalysis = () => {
                                   </p>
                                 </div>
                               </div>
+
+                              {/* Informações do Arquivo */}
+                              {contentResult.fileInfo && (
+                                <div className="bg-white p-6 rounded-xl border border-blue-200">
+                                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                                    Informações do Arquivo
+                                  </h4>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Nome:</span>
+                                      <p className="text-lg font-semibold text-gray-800">{contentResult.fileInfo.name}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Tipo:</span>
+                                      <p className="text-lg font-semibold text-gray-800">{contentResult.fileInfo.type}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Tamanho:</span>
+                                      <p className="text-lg font-semibold text-gray-800">
+                                        {(contentResult.fileInfo.size / 1024 / 1024).toFixed(2)} MB
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Processado em:</span>
+                                      <p className="text-lg font-semibold text-gray-800">
+                                        {new Date(contentResult.fileInfo.processedAt).toLocaleString('pt-BR')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {contentResult.fileInfo.extractedContent && (
+                                    <div className="mt-4">
+                                      <span className="text-sm font-medium text-gray-600">Conteúdo extraído (preview):</span>
+                                      <p className="text-sm text-gray-700 mt-2 bg-white p-3 rounded border">
+                                        {contentResult.fileInfo.extractedContent}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
 
                               <div className="bg-white p-6 rounded-xl border border-gray-200">
                                 <span className="text-sm font-medium text-gray-700">Nível de Risco</span>
@@ -343,9 +551,9 @@ const NewsAnalysis = () => {
                               </ul>
                             </div>
 
-                            <div className="bg-gradient-to-br from-purple-50 to-pink-100 p-4 rounded-xl border border-purple-200">
+                            <div className="bg-white p-4 rounded-xl border border-blue-200">
                               <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                                <Zap className="h-4 w-4 mr-2 text-purple-600" />
+                                <Zap className="h-4 w-4 mr-2 text-blue-600" />
                                 Análise Detalhada
                               </h4>
                               <p className="text-sm text-gray-700">
@@ -367,7 +575,7 @@ const NewsAnalysis = () => {
               <div className="w-full">
                 {/* Form and Results */}
                 <div className="space-y-6 w-full">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 w-full">
+                  <div className="bg-white rounded-xl p-8 w-full">
                     <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                       <Globe className="h-6 w-6 mr-3 text-blue-600" />
                       Análise de Fonte
@@ -386,23 +594,34 @@ const NewsAnalysis = () => {
                           required
                         />
                       </div>
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-5 px-8 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-105 text-lg"
-                      >
-                        {loading ? (
-                          <>
-                            <Clock className="h-6 w-6 mr-3 animate-spin" />
-                            Analisando...
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="h-6 w-6 mr-3" />
-                            Analisar Fonte
-                          </>
-                        )}
-                      </button>
+                      <div className="flex space-x-4">
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-5 px-8 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-105 text-lg"
+                        >
+                          {loading ? (
+                            <>
+                              <Clock className="h-6 w-6 mr-3 animate-spin" />
+                              Analisando...
+                            </>
+                          ) : (
+                            <>
+                              <Globe className="h-6 w-6 mr-3" />
+                              Analisar Fonte
+                            </>
+                          )}
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={clearSourceForm}
+                          className="bg-gray-500 text-white py-5 px-6 rounded-lg font-medium hover:bg-gray-600 transition-all duration-300 flex items-center justify-center"
+                        >
+                          <Trash2 className="h-5 w-5 mr-2" />
+                          Limpar
+                        </button>
+                      </div>
                     </form>
 
                     {/* Results inside the form card */}

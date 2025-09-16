@@ -23,6 +23,7 @@ import analysisRoutes from './routes/analysis.js';
 import contentAnalysisRoutes from './routes/content-analysis.js';
 import sourceAnalysisRoutes from './routes/source-analysis.js';
 import systemRouter from './routes/system.js';
+import fileUploadRoutes from './routes/file-upload.js';
 
 // Configuração do dotenv
 dotenv.config();
@@ -153,6 +154,7 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api/content-analysis', contentAnalysisRoutes);
 app.use('/api/source-analysis', sourceAnalysisRoutes);
 app.use('/api/system', systemRouter);
+app.use('/api/file-upload', fileUploadRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

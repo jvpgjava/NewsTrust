@@ -20,11 +20,15 @@
     "joi": "^17.11.0",
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.10.0",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
+    "pdf-parse": "^1.1.1",
     "pg": "^8.11.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
+    "tesseract.js": "^6.0.1",
     "ws": "^8.18.3"
   },
   "devDependencies": {
