@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { BarChart3, Search, Network, Menu, X, Shield } from "lucide-react"
+import { BarChart3, Search, Network, Menu, X } from "lucide-react"
 
 export default function Layout({ children, currentPage, setCurrentPage }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -25,7 +25,7 @@ export default function Layout({ children, currentPage, setCurrentPage }) {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
-              <Shield className="h-8 w-8 text-blue-600" />
+              <img src="/iconeNewsTrust.png" alt="NewsTrust" className="h-8 w-8" />
               <span className="ml-2 text-xl font-bold text-gray-900">NewsTrust</span>
             </div>
             <button onClick={() => setSidebarOpen(false)}>
@@ -55,7 +55,7 @@ export default function Layout({ children, currentPage, setCurrentPage }) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
           <div className="flex items-center h-16 px-4 border-b border-gray-200">
-            <Shield className="h-8 w-8 text-blue-600" />
+            <img src="/iconeNewsTrust.png" alt="NewsTrust" className="h-8 w-8" />
             <span className="ml-2 text-xl font-bold text-gray-900">NewsTrust</span>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
