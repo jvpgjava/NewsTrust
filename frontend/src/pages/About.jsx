@@ -192,40 +192,44 @@ const About = () => {
 
 
       {/* Contato */}
-      <div className="bg-gray-50 p-6 sm:p-8 rounded-lg">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow">
         <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Entre em Contato</h2>
-        <p className="text-gray-600 mb-4">
+        <p className="text-gray-600 mb-6 leading-relaxed">
           Tem dúvidas sobre o sistema ou sugestões de melhoria? Entre em contato conosco!
         </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-            <input 
-              type="text" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Seu nome"
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div>
+              <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">Nome</label>
+              <input 
+                type="text" 
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                placeholder="Seu nome"
+              />
+            </div>
+            <div>
+              <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">Email</label>
+              <input 
+                type="email" 
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                placeholder="seu@email.com"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">Mensagem</label>
+            <textarea 
+              rows={4}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-y text-sm sm:text-base"
+              placeholder="Sua mensagem aqui..."
             />
           </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input 
-              type="email" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="seu@email.com"
-            />
+          <div className="flex justify-start">
+            <button className="bg-blue-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium text-sm sm:text-base shadow-md hover:shadow-lg">
+              Enviar Mensagem
+            </button>
           </div>
         </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Mensagem</label>
-          <textarea 
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Sua mensagem aqui..."
-          />
-        </div>
-        <button className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
-          Enviar Mensagem
-        </button>
       </div>
     </div>
   );
