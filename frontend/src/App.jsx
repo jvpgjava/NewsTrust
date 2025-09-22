@@ -5,6 +5,7 @@ import Layout from "./components/Layout"
 import Dashboard from "./pages/Dashboard"
 import NewsAnalysis from "./pages/NewsAnalysis"
 import NetworkVisualization from "./pages/NetworkVisualization"
+import About from "./pages/About"
 
 function App() {
   const [currentPage, setCurrentPage] = useState("dashboard")
@@ -17,6 +18,8 @@ function App() {
         return <NewsAnalysis />
       case "network":
         return <NetworkVisualization />
+      case "about":
+        return <About />
       default:
         return <Dashboard />
     }

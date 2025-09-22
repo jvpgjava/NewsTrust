@@ -399,8 +399,8 @@ export default function NetworkVisualization() {
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="px-4 sm:px-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Rede de Confiança</h1>
-        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">Visualização interativa da rede de confiança entre fontes e notícias</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Rede de Confiança</h1>
+        <p className="mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg text-gray-600">Visualização interativa da rede de confiança entre fontes e notícias</p>
       </div>
 
       {/* Graph Type Selector */}

@@ -267,8 +267,12 @@ const NewsAnalysis = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full mb-4 sm:mb-6">
-            <Search className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+          <div className="inline-flex items-center justify-center mb-0 sm:mb-1">
+            <img 
+              src="/IconeNoticias.png" 
+              alt="Análise de Notícias" 
+              className="h-20 w-20 sm:h-24 sm:w-24 object-contain"
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-2 sm:mb-4">
             Análise de Notícias
@@ -291,7 +295,7 @@ const NewsAnalysis = () => {
               >
                 <div className={`p-1 sm:p-2 rounded-full mr-2 sm:mr-3 transition-all duration-300 ${activeTab === 'content' ? 'bg-white/20' : 'bg-gray-100'
                   }`}>
-                  <Brain className={`h-4 w-4 sm:h-5 sm:w-5 ${activeTab === 'content' ? 'text-white' : 'text-gray-500'
+                  <Search className={`h-4 w-4 sm:h-5 sm:w-5 ${activeTab === 'content' ? 'text-white' : 'text-gray-500'
                     }`} />
                 </div>
                 <span className="font-semibold text-xs sm:text-sm">Análise de Conteúdo</span>
@@ -321,7 +325,7 @@ const NewsAnalysis = () => {
                 <div className="space-y-4 sm:space-y-6 w-full">
                   <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 w-full">
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                      <Brain className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-blue-600" />
+                      <Search className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-blue-600" />
                       Análise de Conteúdo
                     </h3>
                     <form onSubmit={handleContentSubmit} className="space-y-4 sm:space-y-6">
@@ -351,13 +355,13 @@ const NewsAnalysis = () => {
                                   Suporta PDF, TXT, DOCX e imagens (JPEG, PNG, etc.) - máx. 5MB
                                 </p>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                              >
-                                Selecionar Arquivo
-                              </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base touch-manipulation"
+                        >
+                          Selecionar Arquivo
+                        </button>
                             </div>
                           </div>
                         ) : (
@@ -413,7 +417,7 @@ const NewsAnalysis = () => {
                       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                       <button
                         type="submit"
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 sm:py-4 lg:py-5 px-4 sm:px-6 lg:px-8 rounded-lg font-semibold text-sm sm:text-base lg:text-lg shadow-md hover:from-blue-700 hover:to-blue-800 transition duration-300 ease-in-out flex items-center justify-center"
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 sm:py-4 lg:py-5 px-4 sm:px-6 lg:px-8 rounded-lg font-semibold text-sm sm:text-base lg:text-lg shadow-md hover:from-blue-700 hover:to-blue-800 transition duration-300 ease-in-out flex items-center justify-center touch-manipulation"
                         disabled={loading}
                       >
                         {loading ? (
@@ -423,7 +427,7 @@ const NewsAnalysis = () => {
                           </svg>
                         ) : (
                           <>
-                              <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 mr-2 sm:mr-3" />
+                              <Search className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 mr-2 sm:mr-3" />
                               <span className="hidden sm:inline">Analisar Conteúdo</span>
                               <span className="sm:hidden">Analisar</span>
                           </>
@@ -433,7 +437,7 @@ const NewsAnalysis = () => {
                         <button
                           type="button"
                           onClick={clearContentForm}
-                          className="bg-red-500 text-white py-3 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-lg font-semibold text-sm sm:text-base lg:text-lg shadow-md hover:bg-red-600 transition duration-300 ease-in-out flex items-center justify-center"
+                          className="bg-red-500 text-white py-3.5 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-lg font-semibold text-sm sm:text-base lg:text-lg shadow-md hover:bg-red-600 transition duration-300 ease-in-out flex items-center justify-center touch-manipulation"
                         >
                           <Trash2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                           Limpar Formulário
@@ -555,8 +559,8 @@ const NewsAnalysis = () => {
                             <div className="bg-white p-3 sm:p-4 rounded-xl border border-blue-200">
                               <h4 className="font-semibold text-gray-900 mb-2 sm:mb-3 flex items-center text-sm sm:text-base">
                                 <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-blue-600" />
-                                Análise Detalhada
-                              </h4>
+                              Análise Detalhada
+                            </h4>
                               <p className="text-xs sm:text-sm text-gray-700">
                               Análise na Web + IA - Resultados: {contentResult.webResults?.totalResults || 0}
                             </p>
@@ -564,11 +568,7 @@ const NewsAnalysis = () => {
                           </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-blue-200 flex items-center justify-center min-h-[150px] sm:min-h-[200px]">
-                        <p className="text-gray-500 text-sm sm:text-base lg:text-lg">Aguardando Análise...</p>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -599,7 +599,7 @@ const NewsAnalysis = () => {
                       <button
                         type="submit"
                         disabled={loading}
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 sm:py-4 lg:py-5 px-4 sm:px-6 lg:px-8 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-105 text-sm sm:text-base lg:text-lg"
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 sm:py-4 lg:py-5 px-4 sm:px-6 lg:px-8 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-105 text-sm sm:text-base lg:text-lg touch-manipulation"
                       >
                         {loading ? (
                           <>
@@ -619,7 +619,7 @@ const NewsAnalysis = () => {
                         <button
                           type="button"
                           onClick={clearSourceForm}
-                          className="bg-red-500 text-white py-3 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-lg font-medium hover:bg-red-600 transition-all duration-300 flex items-center justify-center text-sm sm:text-base lg:text-lg"
+                          className="bg-red-500 text-white py-3.5 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-lg font-medium hover:bg-red-600 transition-all duration-300 flex items-center justify-center text-sm sm:text-base lg:text-lg touch-manipulation"
                         >
                           <Trash2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                           Limpar Formulário
