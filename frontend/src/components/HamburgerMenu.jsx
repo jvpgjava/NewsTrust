@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, BarChart3, Search, Network, Info } from 'lucide-react';
+import { Menu, X, BarChart3, Search, Network, Info, MessageCircle } from 'lucide-react';
 
 const HamburgerMenu = ({ currentPage, onPageChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +9,8 @@ const HamburgerMenu = ({ currentPage, onPageChange }) => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'news-analysis', label: 'Análise de Notícias', icon: Search },
     { id: 'network', label: 'Rede de Confiança', icon: Network },
-    { id: 'about', label: 'Sobre o Sistema', icon: Info }
+    { id: 'about', label: 'Sobre o Sistema', icon: Info },
+    { id: 'contact', label: 'Fale Conosco', icon: MessageCircle }
   ];
 
   const toggleMenu = () => {
