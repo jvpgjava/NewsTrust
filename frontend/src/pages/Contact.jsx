@@ -110,15 +110,15 @@ const Contact = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 pt-8 sm:pt-12">
+    <div className="space-y-6 sm:space-y-8 pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8">
       {/* Contato */}
-      <div className="bg-white p-6 sm:p-8 rounded-lg shadow">
+      <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow max-w-4xl mx-auto">
         <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Entre em Contato</h2>
         <p className="text-gray-600 mb-6 leading-relaxed">
           Tem dúvidas sobre o sistema ou sugestões de melhoria? Entre em contato conosco!
         </p>
         <form onSubmit={handleContactSubmit} className="space-y-4 sm:space-y-6" noValidate>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
                 Nome
@@ -224,7 +224,7 @@ const Contact = () => {
             zIndex: 9999
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 sm:mx-6 transform transition-all duration-300 scale-100">
             {/* Conteúdo da Modal */}
             <div className="px-6 py-8">
               <div className="text-center">
