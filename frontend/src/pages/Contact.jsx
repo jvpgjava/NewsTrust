@@ -85,7 +85,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      await axios.post('http://localhost:3001/api/contact', contactData);
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/.netlify/functions/contact`, contactData);
       setShowSuccessModal(true);
       setContactData({ name: '', email: '', message: '' });
       setValidationErrors({ name: false, email: false, message: false });

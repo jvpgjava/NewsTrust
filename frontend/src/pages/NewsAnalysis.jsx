@@ -108,7 +108,7 @@ const NewsAnalysis = () => {
         })
       } else {
         // Análise de conteúdo manual
-        response = await axios.post('http://localhost:3001/api/content-analysis', contentData)
+        response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/.netlify/functions/content-analysis`, contentData)
       }
       
       setContentResult(response.data)
@@ -126,7 +126,7 @@ const NewsAnalysis = () => {
     setLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:3001/api/source-analysis', sourceData)
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/.netlify/functions/source-analysis`, sourceData)
       setSourceResult(response.data)
       toast.success('Análise de fonte concluída!')
     } catch (error) {

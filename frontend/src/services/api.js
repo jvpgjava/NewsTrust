@@ -52,7 +52,7 @@ export const newsAPI = {
 }
 
 export const contentAnalysisAPI = {
-  analyze: (contentData) => api.post("/api/content-analysis", contentData),
+  analyze: (contentData) => api.post("/.netlify/functions/content-analysis", contentData),
 }
 
 export const sourceAnalysisAPI = {
