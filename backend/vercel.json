@@ -11,5 +11,8 @@
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ]
+  ],
+  "installCommand": "npm install",
+  "buildCommand": "npm run build || echo 'No build script'",
+  "outputDirectory": "."
 }
