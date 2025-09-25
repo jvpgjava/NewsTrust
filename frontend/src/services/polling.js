@@ -32,7 +32,7 @@ class PollingService {
 
   async checkForUpdates() {
     try {
-      const response = await fetch(`${this.apiUrl}/api/notifications/check`, {
+      const response = await fetch(`${this.apiUrl}/.netlify/functions/notifications-check`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
