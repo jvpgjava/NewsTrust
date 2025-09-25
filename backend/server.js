@@ -211,3 +211,6 @@ app.use('*', (req, res) => {
     path: req.originalUrl
   });
 });
+
+// Export para Vercel
+export default app;
