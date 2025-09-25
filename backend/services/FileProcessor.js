@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
-import pdfParse from 'pdf-parse';
+// import pdfParse from 'pdf-parse'; // Moved to lazy loading
 import Tesseract from 'tesseract.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,6 +61,7 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
+            const pdfParse = (await import('pdf-parse')).default;
             const data = await pdfParse(buffer);
             return data.text;
         } catch (error) {
