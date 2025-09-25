@@ -6,6 +6,7 @@ class PollingService {
     this.listeners = new Map();
     this.lastUpdate = null;
     this.apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.newstrust.me';
+    this.initialDataSent = false;
   }
 
   connect() {
@@ -45,14 +46,16 @@ class PollingService {
 
       const data = await response.json();
       
+      // Sempre notificar dados iniciais na primeira chamada
+      if (!this.initialDataSent) {
+        console.log('📊 Enviando dados iniciais:', data);
+        this.notifyListeners('initial_data', data);
+        this.initialDataSent = true;
+      }
+      
       if (data.hasUpdates) {
         console.log('📨 Atualizações encontradas:', data);
         this.notifyListeners('update', data);
-      }
-
-      // Notificar dados iniciais se necessário
-      if (data.initialData) {
-        this.notifyListeners('initial_data', data.initialData);
       }
 
     } catch (error) {
