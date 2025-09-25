@@ -48,23 +48,49 @@ exports.handler = async (event, context) => {
     }
 
     // Chamar API do ScamAdviser (sem API key necessária)
-    const scamAdviserResponse = await fetch(`https://api.scamadviser.com/v1/check?domain=${domain}`, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'NewsTrust/1.0',
-        'Accept': 'application/json'
-      }
+    const https = require('https');
+    const http = require('http');
+    
+    const scamAdviserUrl = `https://api.scamadviser.com/v1/check?domain=${domain}`;
+    
+    const scamAdviserResponse = await new Promise((resolve, reject) => {
+      const request = https.get(scamAdviserUrl, {
+        headers: {
+          'User-Agent': 'NewsTrust/1.0',
+          'Accept': 'application/json'
+        }
+      }, (response) => {
+        let data = '';
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+        response.on('end', () => {
+          resolve({
+            ok: response.statusCode >= 200 && response.statusCode < 300,
+            status: response.statusCode,
+            json: () => JSON.parse(data)
+          });
+        });
+      });
+      
+      request.on('error', (error) => {
+        reject(error);
+      });
+      
+      request.setTimeout(10000, () => {
+        request.destroy();
+        reject(new Error('Request timeout'));
+      });
     });
 
     if (!scamAdviserResponse.ok) {
-      const errorText = await scamAdviserResponse.text();
-      console.error('ScamAdviser API error:', scamAdviserResponse.status, errorText);
+      console.error('ScamAdviser API error:', scamAdviserResponse.status);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
           error: 'Erro na API do ScamAdviser',
-          details: `Status: ${scamAdviserResponse.status}, Response: ${errorText}`
+          details: `Status: ${scamAdviserResponse.status}`
         })
       };
     }
