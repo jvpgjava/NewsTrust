@@ -4,6 +4,7 @@
   "description": "NewsTrust Backend - Netlify Functions",
   "main": "index.html",
   "dependencies": {
+    "@netlify/functions": "^2.0.0",
     "pg": "^8.11.3",
     "nodemailer": "^6.9.7"
   },
