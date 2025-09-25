@@ -11,10 +11,10 @@ class WebSocketService {
   connect() {
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = process.env.NODE_ENV === 'development' ? '3001' : window.location.port;
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.newstrust.me';
+      const wsUrl = backendUrl.replace('http:', 'ws:').replace('https:', 'wss:');
 
-      this.ws = new WebSocket(`${protocol}//${host}:${port}`);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         console.log('🔌 WebSocket conectado');
