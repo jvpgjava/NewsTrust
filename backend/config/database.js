@@ -11,6 +11,20 @@ const __dirname = path.dirname(__filename);
 const envFile = process.env.NODE_ENV === 'production' ? '.env' : '.env.local';
 dotenv.config({ path: path.join(__dirname, '..', envFile) });
 
+// 🔍 DEBUG: Verificar variáveis de ambiente
+console.log('🔍 DEBUG - Variáveis de ambiente:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL existe:', !!process.env.DATABASE_URL);
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_PORT:', process.env.DB_PORT);
+console.log('DB_NAME:', process.env.DB_NAME);
+
+// 🚨 FORÇAR DATABASE_URL NO RAILWAY
+if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+  console.log('🚨 FORÇANDO DATABASE_URL para Railway');
+  process.env.DATABASE_URL = 'postgresql://postgres:Newstrust2024!@wbbxqslgutfxldmyuekb.supabase.co:5432/postgres';
+}
+
 // Configuração da pool de conexões
 // Priorizar DATABASE_URL se disponível, senão usar variáveis individuais
 let poolConfig;
