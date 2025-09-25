@@ -212,5 +212,5 @@ app.use('*', (req, res) => {
   });
 });
 
-// Export para Vercel
+//  Vercel
 export default app;
