@@ -47,11 +47,12 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Chamar API do ScamAdviser
+    // Chamar API do ScamAdviser (sem API key necessária)
     const scamAdviserResponse = await fetch(`https://api.scamadviser.com/v1/check?domain=${domain}`, {
       method: 'GET',
       headers: {
-        'User-Agent': 'NewsTrust/1.0'
+        'User-Agent': 'NewsTrust/1.0',
+        'Accept': 'application/json'
       }
     });
 
