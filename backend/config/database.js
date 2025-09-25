@@ -12,20 +12,30 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env' : '.env.local';
 dotenv.config({ path: path.join(__dirname, '..', envFile) });
 
 // Configuração da pool de conexões
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'newstrust',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
-  max: 20, // máximo de conexões na pool
-  idleTimeoutMillis: 30000, // tempo limite de inatividade
-  connectionTimeoutMillis: 10000, // aumento tempo limite para Railway
-  // SSL obrigatório para Railway em produção
-  ssl: process.env.NODE_ENV === 'production' ? {
-    rejectUnauthorized: false
-  } : false,
-});
+const pool = new Pool(
+  // Usar DATABASE_URL se disponível (Railway), senão usar variáveis individuais
+  process.env.DATABASE_URL ? {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  } : {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'newstrust',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false,
+  }
+);
 
 // Testar conexão
 pool.on('connect', () => {
