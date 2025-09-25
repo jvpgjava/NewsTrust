@@ -19,53 +19,33 @@ exports.handler = async (event, context) => {
   try {
     console.log('🔍 Verificando atualizações...');
     
-    // Simular dados de teste com estrutura correta
-    const testData = {
-      hasUpdates: true,
+    // Retornar dados reais ou vazios
+    const realData = {
+      hasUpdates: false, // Sem atualizações por enquanto
       timestamp: new Date().toISOString(),
-      newNews: [
-        {
-          id: 1,
-          title: 'Notícia de teste',
-          url: 'https://example.com',
-          createdAt: new Date().toISOString()
-        }
-      ],
+      newNews: [],
       newAnalyses: [],
       newSources: [],
-      // Dados do dashboard que o frontend espera
+      // Dados do dashboard - inicialmente vazios
       dashboard: {
-        sourcesCount: 25,
-        connectionsCount: 150,
-        newsCount: 1200,
-        fakeNewsCount: 45,
-        trendData: [
-          { date: '2025-01-20', value: 85 },
-          { date: '2025-01-21', value: 87 },
-          { date: '2025-01-22', value: 89 },
-          { date: '2025-01-23', value: 91 },
-          { date: '2025-01-24', value: 88 }
-        ],
+        sourcesCount: 0,
+        connectionsCount: 0,
+        newsCount: 0,
+        fakeNewsCount: 0,
+        trendData: [],
         riskDistribution: {
-          low: 60,
-          medium: 30,
-          high: 10
+          low: 0,
+          medium: 0,
+          high: 0
         }
       },
-      recentAnalyses: [
-        {
-          id: 1,
-          title: 'Análise de teste',
-          trustScore: 85,
-          createdAt: new Date().toISOString()
-        }
-      ]
+      recentAnalyses: []
     };
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(testData)
+      body: JSON.stringify(realData)
     };
 
   } catch (error) {
