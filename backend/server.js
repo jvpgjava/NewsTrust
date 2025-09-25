@@ -25,6 +25,7 @@ import sourceAnalysisRoutes from './routes/source-analysis.js';
 import systemRouter from './routes/system.js';
 import fileUploadRoutes from './routes/file-upload.js';
 import contactRoutes from './routes/contact.js';
+import notificationsRoutes from './routes/notifications.js';
 
 // Configuração do dotenv
 dotenv.config();
@@ -157,6 +158,7 @@ app.use('/api/source-analysis', sourceAnalysisRoutes);
 app.use('/api/system', systemRouter);
 app.use('/api/file-upload', fileUploadRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

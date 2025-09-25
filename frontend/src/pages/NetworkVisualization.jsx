@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Network, Zap, Globe, FileText, Award, ZoomIn, ZoomOut, MoreVertical } from "lucide-react"
 import * as d3 from "d3"
-import websocketService from "../services/websocket.js"
+import pollingService from "../services/polling.js"
 import toast from "react-hot-toast"
 
 export default function NetworkVisualization() {
@@ -18,8 +18,8 @@ export default function NetworkVisualization() {
   const svgRef = useRef()
 
   useEffect(() => {
-    // Conectar WebSocket
-    websocketService.connect();
+    // Conectar Polling
+    pollingService.connect();
 
     // Listener para dados iniciais
     const handleInitialData = (data) => {
@@ -79,13 +79,13 @@ export default function NetworkVisualization() {
     };
 
     // Adicionar listeners
-    websocketService.addListener('initial_data', handleInitialData);
-    websocketService.addListener('update', handleUpdate);
+    pollingService.addListener('initial_data', handleInitialData);
+    pollingService.addListener('update', handleUpdate);
 
     // Cleanup
     return () => {
-      websocketService.removeListener('initial_data', handleInitialData);
-      websocketService.removeListener('update', handleUpdate);
+      pollingService.removeListener('initial_data', handleInitialData);
+      pollingService.removeListener('update', handleUpdate);
       // Não desconectar o WebSocket aqui, apenas remover os listeners
     };
   }, []);
