@@ -1,22 +1,54 @@
-// Armazenamento simples em memória para as análises
-// Em produção, isso deveria ser um banco de dados real
+// Armazenamento persistente usando arquivo JSON
+const fs = require('fs');
+const path = require('path');
 
-let analysesData = {
-  sources: [],
-  news: [],
-  analyses: [],
-  dashboard: {
-    sourcesCount: 0,
-    connectionsCount: 0,
-    newsCount: 0,
-    fakeNewsCount: 0,
-    trendData: [],
-    riskDistribution: { low: 0, medium: 0, high: 0 }
+const DATA_FILE = path.join('/tmp', 'analyses-data.json');
+
+// Função para carregar dados do arquivo
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = fs.readFileSync(DATA_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
   }
-};
+  
+  // Retornar dados padrão se não conseguir carregar
+  return {
+    sources: [],
+    news: [],
+    analyses: [],
+    dashboard: {
+      sourcesCount: 0,
+      connectionsCount: 0,
+      newsCount: 0,
+      fakeNewsCount: 0,
+      trendData: [],
+      riskDistribution: { low: 0, medium: 0, high: 0 }
+    }
+  };
+}
+
+// Função para salvar dados no arquivo
+function saveData(data) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log('💾 Dados salvos com sucesso');
+  } catch (error) {
+    console.error('Erro ao salvar dados:', error);
+  }
+}
+
+// Carregar dados iniciais
+let analysesData = loadData();
 
 // Função para adicionar nova análise de fonte
 function addSourceAnalysis(analysis) {
+  // Recarregar dados do arquivo
+  analysesData = loadData();
+  
   analysesData.sources.push({
     id: Date.now(),
     name: analysis.name,
@@ -33,11 +65,17 @@ function addSourceAnalysis(analysis) {
   // Atualizar distribuição de risco
   updateRiskDistribution();
   
+  // Salvar dados no arquivo
+  saveData(analysesData);
+  
   console.log('📊 Nova análise de fonte adicionada:', analysis.name);
 }
 
 // Função para adicionar nova análise de conteúdo
 function addContentAnalysis(analysis) {
+  // Recarregar dados do arquivo
+  analysesData = loadData();
+  
   analysesData.analyses.push({
     id: Date.now(),
     title: analysis.title,
@@ -52,6 +90,9 @@ function addContentAnalysis(analysis) {
   
   // Atualizar distribuição de risco
   updateRiskDistribution();
+  
+  // Salvar dados no arquivo
+  saveData(analysesData);
   
   console.log('📊 Nova análise de conteúdo adicionada:', analysis.title);
 }
@@ -78,15 +119,15 @@ function updateRiskDistribution() {
 }
 
 // Função para gerar dados da rede
-function generateNetworkData() {
-  const sources = analysesData.sources.map((source, index) => ({
+function generateNetworkData(data) {
+  const sources = data.sources.map((source, index) => ({
     id: source.id,
     name: source.name,
     credibility: source.credibility,
     type: 'source'
   }));
   
-  const news = analysesData.analyses.map((analysis, index) => ({
+  const news = data.analyses.map((analysis, index) => ({
     id: analysis.id,
     title: analysis.title,
     credibility: analysis.credibility,
@@ -119,16 +160,18 @@ function generateNetworkData() {
 
 // Função para obter dados atualizados
 function getUpdatedData() {
-  const network = generateNetworkData();
+  // Sempre recarregar dados do arquivo para ter os mais recentes
+  const currentData = loadData();
+  const network = generateNetworkData(currentData);
   
   return {
     hasUpdates: true,
     timestamp: new Date().toISOString(),
     newNews: [],
-    newAnalyses: analysesData.analyses.slice(-5), // Últimas 5 análises
-    newSources: analysesData.sources.slice(-5), // Últimas 5 fontes
-    dashboard: analysesData.dashboard,
-    recentAnalyses: analysesData.analyses.slice(-10), // Últimas 10 análises
+    newAnalyses: currentData.analyses.slice(-5), // Últimas 5 análises
+    newSources: currentData.sources.slice(-5), // Últimas 5 fontes
+    dashboard: currentData.dashboard,
+    recentAnalyses: currentData.analyses.slice(-10), // Últimas 10 análises
     network: network
   };
 }
