@@ -19,5 +19,8 @@
     "server.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "includeFiles": [
+    "test/**/*"
+  ]
 }
