@@ -9,6 +9,10 @@ class WebSocketService {
   }
 
   connect() {
+    // Temporariamente desabilitado - Vercel não suporta WebSocket no plano gratuito
+    console.log('⚠️ WebSocket temporariamente desabilitado');
+    return;
+    
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.newstrust.me';
