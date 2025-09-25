@@ -12,7 +12,12 @@
       "dest": "/server.js"
     }
   ],
-  "installCommand": "npm install",
-  "buildCommand": "npm run build || echo 'No build script'",
-  "outputDirectory": "."
+  "installCommand": "npm install --production=false",
+  "buildCommand": "echo 'No build step required'",
+  "outputDirectory": ".",
+  "functions": {
+    "server.js": {
+      "maxDuration": 30
+    }
+  }
 }
