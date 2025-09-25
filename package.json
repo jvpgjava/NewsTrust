@@ -1,7 +1,13 @@
 {
+  "name": "newstrust-netlify",
+  "version": "1.0.0",
+  "description": "NewsTrust Backend - Netlify Functions",
+  "main": "index.html",
   "dependencies": {
-    "dotenv": "^17.2.1",
-    "framer-motion": "^12.23.18",
-    "node-fetch": "^3.3.2"
+    "pg": "^8.11.3",
+    "nodemailer": "^6.9.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
