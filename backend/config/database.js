@@ -20,12 +20,12 @@ console.log('DB_HOST:', process.env.DB_HOST);
 console.log('DB_PORT:', process.env.DB_PORT);
 console.log('DB_NAME:', process.env.DB_NAME);
 
-// 🚨 FORÇAR VARIÁVEIS INDIVIDUAIS NO RAILWAY (Supabase)
+// 🚨 FORÇAR VARIÁVEIS INDIVIDUAIS NO RAILWAY (Railway PostgreSQL)
 if (process.env.NODE_ENV === 'production') {
-  console.log('🚨 FORÇANDO variáveis individuais para Supabase');
-  process.env.DB_HOST = 'wbbxqslgutfxldmyuekb.supabase.co';
+  console.log('🚨 FORÇANDO variáveis individuais para Railway PostgreSQL');
+  process.env.DB_HOST = 'autorack.proxy-us-east-1.railway.app';
   process.env.DB_PORT = '5432';
-  process.env.DB_NAME = 'postgres';
+  process.env.DB_NAME = 'railway';
   process.env.DB_USER = 'postgres';
   process.env.DB_PASSWORD = 'Newstrust2024!';
   // Limpar DATABASE_URL para forçar uso de variáveis individuais
