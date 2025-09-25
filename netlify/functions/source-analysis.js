@@ -1,3 +1,5 @@
+const { addSourceAnalysis } = require('./data-storage');
+
 exports.handler = async (event, context) => {
   // CORS headers
   const headers = {
@@ -147,6 +149,9 @@ exports.handler = async (event, context) => {
     };
 
     console.log('✅ Análise de fonte concluída com ScamAdviser:', analysisResult.trustScore);
+
+    // Salvar análise no armazenamento para atualizar dashboard e network
+    addSourceAnalysis(analysisResult);
 
     return {
       statusCode: 200,

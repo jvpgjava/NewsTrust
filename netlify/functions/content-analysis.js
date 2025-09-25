@@ -1,3 +1,5 @@
+const { addContentAnalysis } = require('./data-storage');
+
 exports.handler = async (event, context) => {
   // CORS headers
   const headers = {
@@ -132,6 +134,9 @@ exports.handler = async (event, context) => {
     };
 
     console.log('✅ Análise concluída com Groq:', result.trustScore);
+
+    // Salvar análise no armazenamento para atualizar dashboard e network
+    addContentAnalysis(result);
 
     return {
       statusCode: 200,
