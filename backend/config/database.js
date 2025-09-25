@@ -15,6 +15,7 @@ dotenv.config({ path: path.join(__dirname, '..', envFile) });
 console.log('🔍 DEBUG - Variáveis de ambiente:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('DATABASE_URL existe:', !!process.env.DATABASE_URL);
+console.log('DATABASE_URL (primeiros 50 chars):', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'undefined');
 console.log('DB_HOST:', process.env.DB_HOST);
 console.log('DB_PORT:', process.env.DB_PORT);
 console.log('DB_NAME:', process.env.DB_NAME);
@@ -31,6 +32,7 @@ let poolConfig;
 
 if (process.env.DATABASE_URL) {
   // Usar DATABASE_URL (Railway/Supabase)
+  console.log('✅ Usando DATABASE_URL para conexão');
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
     max: 20, // máximo de conexões na pool
@@ -41,8 +43,15 @@ if (process.env.DATABASE_URL) {
       rejectUnauthorized: false
     } : false,
   };
+  console.log('🔧 Configuração da pool:', {
+    max: poolConfig.max,
+    idleTimeoutMillis: poolConfig.idleTimeoutMillis,
+    connectionTimeoutMillis: poolConfig.connectionTimeoutMillis,
+    ssl: poolConfig.ssl
+  });
 } else {
   // Fallback para variáveis individuais (desenvolvimento)
+  console.log('⚠️ DATABASE_URL não encontrada, usando variáveis individuais');
   poolConfig = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
