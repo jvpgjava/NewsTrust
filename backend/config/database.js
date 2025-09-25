@@ -20,7 +20,11 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   max: 20, // máximo de conexões na pool
   idleTimeoutMillis: 30000, // tempo limite de inatividade
-  connectionTimeoutMillis: 2000, // tempo limite de conexão
+  connectionTimeoutMillis: 10000, // aumento tempo limite para Railway
+  // SSL obrigatório para Railway em produção
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false
+  } : false,
 });
 
 // Testar conexão
