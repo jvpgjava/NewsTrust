@@ -116,36 +116,34 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Instâncias globais já inicializadas em services/instances.js
 
-// Inicializar banco de dados e grafo
-async function initializeApp() {
+// Inicializar aplicação de forma simplificada
+server.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`📚 Documentação: http://localhost:${PORT}/api-docs`);
+  console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
+});
+
+// Inicializar banco de dados e grafo de forma assíncrona (sem bloquear)
+setTimeout(async () => {
   try {
     await initializeDatabase();
     await initializeInstances();
     console.log('✅ Banco de dados e grafo inicializados');
+    
+    // Inicializar WebSocket
+    realTimeService.initialize(server);
+    
+    // Inicializar serviço de conexões automáticas
+    AutoConnectionService.schedulePeriodicUpdate(30);
+    
+    // Iniciar serviço de atualizações em tempo real
+    RealTimeUpdateService.start();
+    console.log('🔄 Serviço de conexões automáticas inicializado');
   } catch (error) {
     console.error('❌ Erro ao inicializar:', error);
-    process.exit(1);
+    // Não fazer exit, apenas logar o erro
   }
-}
-
-// Inicializar aplicação
-initializeApp().then(() => {
-  server.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📚 Documentação: http://localhost:${PORT}/api-docs`);
-    console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
-  });
-
-  // Inicializar WebSocket
-  realTimeService.initialize(server);
-
-  // Inicializar serviço de conexões automáticas
-  AutoConnectionService.schedulePeriodicUpdate(30); // Atualizar a cada 30 minutos
-
-  // Iniciar serviço de atualizações em tempo real
-  RealTimeUpdateService.start();
-  console.log('🔄 Serviço de conexões automáticas inicializado');
-});
+}, 1000); // Aguardar 1 segundo antes de inicializar
 
 // Rotas
 app.use('/api/sources', sourcesRoutes);
