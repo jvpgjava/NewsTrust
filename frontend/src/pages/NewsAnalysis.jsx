@@ -458,12 +458,12 @@ const NewsAnalysis = () => {
 
                           <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                             <div className="space-y-3 sm:space-y-4">
-                              <div className={`p-4 sm:p-6 rounded-xl border ${getConfidenceBgColor(contentResult.confidence)}`}>
-                                <span className={`text-xs sm:text-sm font-medium ${getConfidenceTextColor(contentResult.confidence)}`}>Credibilidade</span>
+                              <div className={`p-4 sm:p-6 rounded-xl border ${getConfidenceBgColor(contentResult.credibility)}`}>
+                                <span className={`text-xs sm:text-sm font-medium ${getConfidenceTextColor(contentResult.credibility)}`}>Credibilidade</span>
                                 <div className="flex items-center mt-2 sm:mt-3">
-                                  {getConfidenceIcon(contentResult.confidence)}
-                                  <p className={`text-2xl sm:text-3xl font-bold ml-2 sm:ml-3 ${getConfidenceColor(contentResult.confidence)}`}>
-                                    {contentResult.confidence && !isNaN(contentResult.confidence) ? Math.round(contentResult.confidence * 100) : 0}%
+                                  {getConfidenceIcon(contentResult.credibility)}
+                                  <p className={`text-2xl sm:text-3xl font-bold ml-2 sm:ml-3 ${getConfidenceColor(contentResult.credibility)}`}>
+                                    {contentResult.credibility && !isNaN(contentResult.credibility) ? Math.round(contentResult.credibility) : 0}%
                                   </p>
                                 </div>
                             </div>
@@ -513,14 +513,14 @@ const NewsAnalysis = () => {
                                 <div className="mt-2 sm:mt-3">
                                   <div className="mb-2">
                                     <span className="text-base sm:text-lg font-bold text-gray-900">
-                                      {contentResult.riskLevel ? contentResult.riskLevel.toUpperCase() : 'N/A'}
+                                      {contentResult.analysis?.riskLevel ? contentResult.analysis.riskLevel.toUpperCase() : 'N/A'}
                                     </span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
                                     <div
-                                      className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(contentResult.riskLevel)}`}
+                                      className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(contentResult.analysis?.riskLevel)}`}
                                     style={{
-                                        width: getRiskLevelBarWidth(contentResult.riskLevel)
+                                        width: getRiskLevelBarWidth(contentResult.analysis?.riskLevel)
                                     }}
                                   ></div>
                                 </div>
@@ -534,8 +534,8 @@ const NewsAnalysis = () => {
                               Razões
                             </h4>
                               <ul className="list-disc list-inside text-xs sm:text-sm space-y-1">
-                              {Array.isArray(contentResult.reasons) ? contentResult.reasons.map((reason, index) => (
-                                <li key={index}>{reason}</li>
+                              {Array.isArray(contentResult.analysis?.riskFactors) ? contentResult.analysis.riskFactors.map((factor, index) => (
+                                <li key={index}>{factor.description || factor.factor}</li>
                               )) : (
                                 <li>Análise concluída</li>
                               )}
@@ -548,7 +548,7 @@ const NewsAnalysis = () => {
                               Recomendações
                             </h4>
                               <ul className="list-disc list-inside text-xs sm:text-sm space-y-1">
-                              {Array.isArray(contentResult.recommendations) ? contentResult.recommendations.map((rec, index) => (
+                              {Array.isArray(contentResult.analysis?.recommendations) ? contentResult.analysis.recommendations.map((rec, index) => (
                                 <li key={index}>{rec}</li>
                               )) : (
                                 <li>Verificar fontes confiáveis</li>
@@ -562,7 +562,7 @@ const NewsAnalysis = () => {
                               Análise Detalhada
                             </h4>
                               <p className="text-xs sm:text-sm text-gray-700">
-                              Análise na Web + IA - Resultados: {contentResult.webResults?.totalResults || 0}
+                              Análise na Web + IA - Resultados: {contentResult.analysis?.keywords?.length || 0}
                             </p>
                             </div>
                           </div>
