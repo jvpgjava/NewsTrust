@@ -9,10 +9,15 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "server.js"
     }
   ],
-  "installCommand": "npm install --production=false",
-  "buildCommand": "echo 'No build step required'",
-  "outputDirectory": "."
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "server.js": {
+      "maxDuration": 30
+    }
+  }
 }
