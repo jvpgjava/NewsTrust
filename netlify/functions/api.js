@@ -112,6 +112,7 @@ async function initializeDatabase() {
 
 // Handler principal
 export const handler = async (event, context) => {
+  console.log('🔍 API chamada:', event.httpMethod, event.path);
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
