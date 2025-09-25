@@ -20,10 +20,16 @@ console.log('DB_HOST:', process.env.DB_HOST);
 console.log('DB_PORT:', process.env.DB_PORT);
 console.log('DB_NAME:', process.env.DB_NAME);
 
-// 🚨 FORÇAR DATABASE_URL NO RAILWAY
-if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
-  console.log('🚨 FORÇANDO DATABASE_URL para Railway');
-  process.env.DATABASE_URL = 'postgresql://postgres:Newstrust2024!@wbbxqslgutfxldmyuekb.supabase.co:5432/postgres';
+// 🚨 FORÇAR VARIÁVEIS INDIVIDUAIS NO RAILWAY (Supabase)
+if (process.env.NODE_ENV === 'production') {
+  console.log('🚨 FORÇANDO variáveis individuais para Supabase');
+  process.env.DB_HOST = 'wbbxqslgutfxldmyuekb.supabase.co';
+  process.env.DB_PORT = '5432';
+  process.env.DB_NAME = 'postgres';
+  process.env.DB_USER = 'postgres';
+  process.env.DB_PASSWORD = 'Newstrust2024!';
+  // Limpar DATABASE_URL para forçar uso de variáveis individuais
+  delete process.env.DATABASE_URL;
 }
 
 // Configuração da pool de conexões
