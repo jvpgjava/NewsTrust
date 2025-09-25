@@ -48,23 +48,43 @@ exports.handler = async (event, context) => {
     }
 
     // Chamar API do ScamAdviser (sem API key necessária)
-    const scamAdviserResponse = await fetch(`https://api.scamadviser.com/v1/check?domain=${domain}`, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'NewsTrust/1.0',
-        'Accept': 'application/json'
-      }
-    });
-
     let scamAdviserData = null;
-    if (scamAdviserResponse.ok) {
-      scamAdviserData = await scamAdviserResponse.json();
+    try {
+      const scamAdviserResponse = await fetch(`https://api.scamadviser.com/v1/check?domain=${domain}`, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'NewsTrust/1.0',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (scamAdviserResponse.ok) {
+        scamAdviserData = await scamAdviserResponse.json();
+      } else {
+        console.log('⚠️ ScamAdviser API não disponível, usando análise básica');
+      }
+    } catch (scamAdviserError) {
+      console.log('⚠️ Erro na API do ScamAdviser:', scamAdviserError.message);
+      // Continuar com análise básica
     }
 
-    // Processar dados do ScamAdviser
-    const trustScore = scamAdviserData?.trust_score || 50;
-    const credibility = Math.max(0, Math.min(100, trustScore));
-    const reliability = Math.max(0, Math.min(100, trustScore + 10));
+    // Processar dados do ScamAdviser ou usar análise básica
+    let trustScore, credibility, reliability;
+    
+    if (scamAdviserData) {
+      trustScore = scamAdviserData.trust_score || 50;
+      credibility = Math.max(0, Math.min(100, trustScore));
+      reliability = Math.max(0, Math.min(100, trustScore + 10));
+    } else {
+      // Análise básica baseada no domínio
+      const isKnownDomain = domain.includes('gov.br') || domain.includes('edu.br') || 
+                           domain.includes('g1.com.br') || domain.includes('uol.com.br') ||
+                           domain.includes('folha.com.br') || domain.includes('estadao.com.br');
+      
+      trustScore = isKnownDomain ? 75 : 50;
+      credibility = trustScore;
+      reliability = trustScore + 5;
+    }
 
     const analysisResult = {
       id: Date.now(),
