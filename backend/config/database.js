@@ -12,20 +12,40 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env' : '.env.local';
 dotenv.config({ path: path.join(__dirname, '..', envFile) });
 
 // Configuração da pool de conexões
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'newstrust',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
-  max: 20, // máximo de conexões na pool
-  idleTimeoutMillis: 30000, // tempo limite de inatividade
-  connectionTimeoutMillis: 10000, // aumento tempo limite para Railway
-  // SSL obrigatório para Railway em produção
-  ssl: process.env.NODE_ENV === 'production' ? {
-    rejectUnauthorized: false
-  } : false,
-});
+// Priorizar DATABASE_URL se disponível, senão usar variáveis individuais
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  // Usar DATABASE_URL (Railway/Supabase)
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    max: 20, // máximo de conexões na pool
+    idleTimeoutMillis: 30000, // tempo limite de inatividade
+    connectionTimeoutMillis: 10000, // aumento tempo limite para Railway
+    // SSL obrigatório para Railway em produção
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false,
+  };
+} else {
+  // Fallback para variáveis individuais (desenvolvimento)
+  poolConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'newstrust',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD,
+    max: 20, // máximo de conexões na pool
+    idleTimeoutMillis: 30000, // tempo limite de inatividade
+    connectionTimeoutMillis: 10000, // aumento tempo limite para Railway
+    // SSL obrigatório para Railway em produção
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false,
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 // Testar conexão
 pool.on('connect', () => {
