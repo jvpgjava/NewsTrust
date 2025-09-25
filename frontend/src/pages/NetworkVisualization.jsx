@@ -21,9 +21,16 @@ export default function NetworkVisualization() {
     // Conectar Polling
     pollingService.connect();
 
+    // Timeout para parar loading se não receber dados
+    const loadingTimeout = setTimeout(() => {
+      console.log('⏰ Timeout: Parando loading sem dados');
+      setLoading(false);
+    }, 5000); // 5 segundos
+
     // Listener para dados iniciais
     const handleInitialData = (data) => {
       console.log('📊 Dados iniciais recebidos:', data);
+      clearTimeout(loadingTimeout); // Cancelar timeout
 
       if (data.network) {
         setSourcesGraphData({
@@ -84,9 +91,9 @@ export default function NetworkVisualization() {
 
     // Cleanup
     return () => {
+      clearTimeout(loadingTimeout);
       pollingService.removeListener('initial_data', handleInitialData);
       pollingService.removeListener('update', handleUpdate);
-      // Não desconectar o WebSocket aqui, apenas remover os listeners
     };
   }, []);
 

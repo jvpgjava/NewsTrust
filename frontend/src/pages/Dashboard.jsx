@@ -27,16 +27,23 @@ export default function Dashboard() {
     // Conectar Polling
     pollingService.connect();
 
+    // Timeout para parar loading se não receber dados
+    const loadingTimeout = setTimeout(() => {
+      console.log('⏰ Timeout: Parando loading sem dados');
+      setLoading(false);
+    }, 5000); // 5 segundos
+
     // Listener para dados iniciais
     const handleInitialData = (data) => {
       console.log('📊 Dashboard - Dados iniciais recebidos:', data);
+      clearTimeout(loadingTimeout); // Cancelar timeout
       setStats({
-        sourcesCount: data.dashboard.sourcesCount,
-        connectionsCount: data.dashboard.connectionsCount,
-        newsCount: data.dashboard.newsCount,
-        fakeNewsCount: data.dashboard.fakeNewsCount,
-        trendData: data.dashboard.trendData,
-        riskDistribution: data.dashboard.riskDistribution
+        sourcesCount: data.dashboard?.sourcesCount || 0,
+        connectionsCount: data.dashboard?.connectionsCount || 0,
+        newsCount: data.dashboard?.newsCount || 0,
+        fakeNewsCount: data.dashboard?.fakeNewsCount || 0,
+        trendData: data.dashboard?.trendData || [],
+        riskDistribution: data.dashboard?.riskDistribution || { low: 0, medium: 0, high: 0 }
       });
       setRecentAnalyses(data.recentAnalyses || []);
       setLoading(false);
@@ -45,12 +52,12 @@ export default function Dashboard() {
     // Listener para atualizações
     const handleUpdate = (data) => {
       setStats({
-        sourcesCount: data.dashboard.sourcesCount,
-        connectionsCount: data.dashboard.connectionsCount,
-        newsCount: data.dashboard.newsCount,
-        fakeNewsCount: data.dashboard.fakeNewsCount,
-        trendData: data.dashboard.trendData,
-        riskDistribution: data.dashboard.riskDistribution
+        sourcesCount: data.dashboard?.sourcesCount || 0,
+        connectionsCount: data.dashboard?.connectionsCount || 0,
+        newsCount: data.dashboard?.newsCount || 0,
+        fakeNewsCount: data.dashboard?.fakeNewsCount || 0,
+        trendData: data.dashboard?.trendData || [],
+        riskDistribution: data.dashboard?.riskDistribution || { low: 0, medium: 0, high: 0 }
       });
       setRecentAnalyses(data.recentAnalyses || []);
     };
@@ -61,9 +68,9 @@ export default function Dashboard() {
 
     // Cleanup
     return () => {
+      clearTimeout(loadingTimeout);
       pollingService.removeListener('initial_data', handleInitialData);
       pollingService.removeListener('update', handleUpdate);
-      // Não desconectar o WebSocket aqui, apenas remover os listeners
     };
   }, []);
 
