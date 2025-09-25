@@ -17,7 +17,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    console.log('🔍 Analisando conteúdo...');
+    console.log('🔍 Analisando conteúdo com Groq...');
     
     // Parse do body da requisição
     const body = JSON.parse(event.body || '{}');
@@ -33,51 +33,94 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Simular análise de conteúdo
-    const analysisResult = {
+    // Chamar API do Groq para análise
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: `Você é um especialista em análise de credibilidade de notícias. 
+            Analise o título e conteúdo fornecidos e retorne uma análise detalhada em JSON com:
+            - trustScore (0-100): pontuação de confiabilidade
+            - credibility (0-100): credibilidade geral
+            - reliability (0-100): confiabilidade da fonte
+            - sentiment: positivo/negativo/neutro
+            - language: idioma detectado
+            - keywords: palavras-chave importantes
+            - entities: entidades mencionadas
+            - riskFactors: fatores de risco identificados
+            - recommendations: recomendações para verificação
+            
+            Retorne APENAS o JSON, sem texto adicional.`
+          },
+          {
+            role: 'user',
+            content: `Título: ${title}\n\nConteúdo: ${content}`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+      })
+    });
+
+    if (!groqResponse.ok) {
+      throw new Error(`Groq API error: ${groqResponse.status}`);
+    }
+
+    const groqData = await groqResponse.json();
+    const analysisText = groqData.choices[0].message.content;
+    
+    // Parse da resposta do Groq
+    let analysisResult;
+    try {
+      analysisResult = JSON.parse(analysisText);
+    } catch (parseError) {
+      console.error('Erro ao fazer parse da resposta do Groq:', parseError);
+      // Fallback para análise básica
+      analysisResult = {
+        trustScore: 50,
+        credibility: 50,
+        reliability: 50,
+        sentiment: 'neutro',
+        language: 'pt-BR',
+        keywords: [],
+        entities: [],
+        riskFactors: [],
+        recommendations: ['Verificar fontes oficiais']
+      };
+    }
+
+    const result = {
       id: Date.now(),
       title: title,
       content: content,
-      trustScore: Math.floor(Math.random() * 40) + 60, // 60-100
-      credibility: Math.floor(Math.random() * 30) + 70, // 70-100
-      reliability: Math.floor(Math.random() * 25) + 75, // 75-100
+      trustScore: analysisResult.trustScore || 50,
+      credibility: analysisResult.credibility || 50,
+      reliability: analysisResult.reliability || 50,
       analysis: {
-        sentiment: Math.random() > 0.5 ? 'positive' : 'negative',
-        language: 'pt-BR',
-        keywords: ['governo', 'Brasil', 'Argentina', 'destruído'],
-        entities: [
-          { name: 'Brasil', type: 'LOCATION', confidence: 0.95 },
-          { name: 'Argentina', type: 'LOCATION', confidence: 0.90 },
-          { name: 'governo', type: 'ORGANIZATION', confidence: 0.85 }
-        ],
-        riskFactors: [
-          {
-            factor: 'linguagem_sensacionalista',
-            score: 0.8,
-            description: 'Uso de linguagem exagerada e alarmista'
-          },
-          {
-            factor: 'falta_fontes',
-            score: 0.9,
-            description: 'Ausência de fontes confiáveis'
-          }
-        ],
-        recommendations: [
-          'Verificar fontes oficiais',
-          'Consultar múltiplas fontes',
-          'Analisar contexto histórico'
-        ]
+        sentiment: analysisResult.sentiment || 'neutro',
+        language: analysisResult.language || 'pt-BR',
+        keywords: analysisResult.keywords || [],
+        entities: analysisResult.entities || [],
+        riskFactors: analysisResult.riskFactors || [],
+        recommendations: analysisResult.recommendations || []
       },
       createdAt: new Date().toISOString(),
       status: 'completed'
     };
 
-    console.log('✅ Análise concluída:', analysisResult.trustScore);
+    console.log('✅ Análise concluída com Groq:', result.trustScore);
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(analysisResult)
+      body: JSON.stringify(result)
     };
 
   } catch (error) {
