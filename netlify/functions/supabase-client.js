@@ -22,13 +22,16 @@ async function saveSourceAnalysis(analysis) {
       .insert([
         {
           nome: analysis.name,
-          url: analysis.url,
-          credibilidade: analysis.credibility,
-          confiabilidade: analysis.reliability,
-          score_credibilidade: analysis.trustScore,
-          analise: analysis.analysis,
-          status: 'concluida',
-          criado_em: new Date().toISOString()
+          site: analysis.url,
+          peso: analysis.credibility / 100, // Converter para decimal (0-1)
+          tipo: 'Site Analisado',
+          descricao: `Análise de credibilidade: ${analysis.credibility}%`,
+          external_data: {
+            trustScore: analysis.trustScore,
+            reliability: analysis.reliability,
+            analysis: analysis.analysis,
+            status: 'concluida'
+          }
         }
       ])
       .select();
@@ -53,14 +56,10 @@ async function saveContentAnalysis(analysis) {
       .from('noticias')
       .insert([
         {
-          titulo: analysis.title,
-          conteudo: analysis.content,
-          credibilidade: analysis.credibility,
-          confiabilidade: analysis.reliability,
-          score_credibilidade: analysis.trustScore,
-          analise: analysis.analysis,
-          status: 'concluida',
-          criado_em: new Date().toISOString()
+          texto: analysis.content,
+          link: analysis.title, // Usar título como link temporário
+          confiabilidade: analysis.credibility / 100, // Converter para decimal (0-1)
+          id_fonte: null // Não temos fonte específica para análises de conteúdo
         }
       ])
       .select();
@@ -99,21 +98,21 @@ async function getDashboardData() {
       console.error('❌ Erro ao contar notícias:', newsError);
     }
 
-    // Contar fake news (notícias com credibilidade baixa)
+    // Contar fake news (notícias com confiabilidade baixa)
     const { count: fakeNewsCount, error: fakeNewsError } = await supabase
       .from('noticias')
       .select('*', { count: 'exact', head: true })
-      .lt('credibilidade', 50);
+      .lt('confiabilidade', 0.5); // Menor que 0.5 (50%)
 
     if (fakeNewsError) {
       console.error('❌ Erro ao contar fake news:', fakeNewsError);
     }
 
-    // Obter análises recentes
+    // Obter análises recentes (notícias)
     const { data: recentAnalyses, error: recentError } = await supabase
       .from('noticias')
       .select('*')
-      .order('criado_em', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(10);
 
     if (recentError) {
@@ -124,7 +123,7 @@ async function getDashboardData() {
     const { data: recentSources, error: sourcesRecentError } = await supabase
       .from('fontes')
       .select('*')
-      .order('criado_em', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(10);
 
     if (sourcesRecentError) {
@@ -187,15 +186,15 @@ async function getNetworkData() {
     const sourceNodes = (sources || []).map((source, index) => ({
       id: source.id,
       name: source.nome,
-      credibility: source.credibilidade,
+      credibility: Math.round(source.peso * 100), // Converter de decimal para porcentagem
       type: 'source'
     }));
 
     // Gerar nós das notícias
     const newsNodes = (news || []).map((newsItem, index) => ({
       id: newsItem.id,
-      title: newsItem.titulo,
-      credibility: newsItem.credibilidade,
+      title: newsItem.link, // Usar link como título
+      credibility: Math.round(newsItem.confiabilidade * 100), // Converter de decimal para porcentagem
       type: 'news'
     }));
 
