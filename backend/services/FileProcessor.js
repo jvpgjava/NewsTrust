@@ -10,12 +10,17 @@ const __dirname = path.dirname(__filename);
 
 class FileProcessor {
     constructor() {
-        this.uploadDir = path.join(__dirname, '../uploads');
-        this.ensureUploadDir();
+        // No Vercel, não criar pasta de uploads
+        if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+            this.uploadDir = null; // Não usar uploads no Vercel
+        } else {
+            this.uploadDir = path.join(__dirname, '../uploads');
+            this.ensureUploadDir();
+        }
     }
 
     ensureUploadDir() {
-        if (!fs.existsSync(this.uploadDir)) {
+        if (this.uploadDir && !fs.existsSync(this.uploadDir)) {
             fs.mkdirSync(this.uploadDir, { recursive: true });
         }
     }
