@@ -1,4 +1,4 @@
-const { addSourceAnalysis } = require('./data-storage');
+const { saveSourceAnalysis } = require('./supabase-client');
 
 exports.handler = async (event, context) => {
   // CORS headers
@@ -150,8 +150,12 @@ exports.handler = async (event, context) => {
 
     console.log('✅ Análise de fonte concluída com ScamAdviser:', analysisResult.trustScore);
 
-    // Salvar análise no armazenamento para atualizar dashboard e network
-    addSourceAnalysis(analysisResult);
+    // Salvar análise no Supabase
+    const saveResult = await saveSourceAnalysis(analysisResult);
+    if (!saveResult.success) {
+      console.error('❌ Erro ao salvar no Supabase:', saveResult.error);
+      // Continuar mesmo com erro de salvamento
+    }
 
     return {
       statusCode: 200,

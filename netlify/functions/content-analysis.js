@@ -1,4 +1,4 @@
-const { addContentAnalysis } = require('./data-storage');
+const { saveContentAnalysis } = require('./supabase-client');
 
 exports.handler = async (event, context) => {
   // CORS headers
@@ -135,8 +135,12 @@ exports.handler = async (event, context) => {
 
     console.log('✅ Análise concluída com Groq:', result.trustScore);
 
-    // Salvar análise no armazenamento para atualizar dashboard e network
-    addContentAnalysis(result);
+    // Salvar análise no Supabase
+    const saveResult = await saveContentAnalysis(result);
+    if (!saveResult.success) {
+      console.error('❌ Erro ao salvar no Supabase:', saveResult.error);
+      // Continuar mesmo com erro de salvamento
+    }
 
     return {
       statusCode: 200,

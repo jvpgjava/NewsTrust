@@ -1,4 +1,4 @@
-const { getUpdatedData } = require('./data-storage');
+const { getDashboardData, getNetworkData } = require('./supabase-client');
 
 exports.handler = async (event, context) => {
   // CORS headers
@@ -21,8 +21,27 @@ exports.handler = async (event, context) => {
   try {
     console.log('🔍 Verificando atualizações...');
     
-    // Obter dados atualizados do armazenamento
-    const realData = getUpdatedData();
+    // Obter dados do Supabase
+    const dashboardData = await getDashboardData();
+    const networkData = await getNetworkData();
+
+    const realData = {
+      hasUpdates: true,
+      timestamp: new Date().toISOString(),
+      newNews: [],
+      newAnalyses: dashboardData.recentAnalyses || [],
+      newSources: dashboardData.recentSources || [],
+      dashboard: {
+        sourcesCount: dashboardData.sourcesCount,
+        connectionsCount: dashboardData.connectionsCount,
+        newsCount: dashboardData.newsCount,
+        fakeNewsCount: dashboardData.fakeNewsCount,
+        trendData: dashboardData.trendData,
+        riskDistribution: dashboardData.riskDistribution
+      },
+      recentAnalyses: dashboardData.recentAnalyses || [],
+      network: networkData
+    };
 
     return {
       statusCode: 200,
