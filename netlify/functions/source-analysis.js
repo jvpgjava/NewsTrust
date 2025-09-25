@@ -21,14 +21,14 @@ exports.handler = async (event, context) => {
     
     // Parse do body da requisição
     const body = JSON.parse(event.body || '{}');
-    const { name, url, description } = body;
+    const { url } = body;
 
-    if (!name || !url) {
+    if (!url) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ 
-          error: 'Nome e URL são obrigatórios' 
+          error: 'URL é obrigatória' 
         })
       };
     }
@@ -68,9 +68,9 @@ exports.handler = async (event, context) => {
 
     const analysisResult = {
       id: Date.now(),
-      name: name,
+      name: domain, // Usar o domínio como nome
       url: url,
-      description: description || '',
+      description: '',
       trustScore: credibility,
       credibility: credibility,
       reliability: reliability,
