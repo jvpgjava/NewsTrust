@@ -14,10 +14,5 @@
   ],
   "installCommand": "npm install --production=false",
   "buildCommand": "echo 'No build step required'",
-  "outputDirectory": ".",
-  "functions": {
-    "server.js": {
-      "maxDuration": 30
-    }
-  }
+  "outputDirectory": "."
 }
