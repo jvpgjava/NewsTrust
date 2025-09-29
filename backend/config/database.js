@@ -20,16 +20,10 @@ console.log('DB_HOST:', process.env.DB_HOST);
 console.log('DB_PORT:', process.env.DB_PORT);
 console.log('DB_NAME:', process.env.DB_NAME);
 
-// 🚨 FORÇAR VARIÁVEIS INDIVIDUAIS NO RAILWAY (Railway PostgreSQL)
+// ✅ USAR SUPABASE EM PRODUÇÃO
 if (process.env.NODE_ENV === 'production') {
-  console.log('🚨 FORÇANDO variáveis individuais para Railway PostgreSQL');
-  process.env.DB_HOST = 'autorack.proxy-us-east-1.railway.app';
-  process.env.DB_PORT = '5432';
-  process.env.DB_NAME = 'railway';
-  process.env.DB_USER = 'postgres';
-  process.env.DB_PASSWORD = 'Newstrust2024!';
-  // Limpar DATABASE_URL para forçar uso de variáveis individuais
-  delete process.env.DATABASE_URL;
+  console.log('✅ Usando Supabase em produção');
+  // Manter DATABASE_URL do Supabase
 }
 
 // Configuração da pool de conexões
