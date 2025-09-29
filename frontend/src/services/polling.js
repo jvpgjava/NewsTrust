@@ -4,22 +4,29 @@ class PollingService {
   constructor() {
     this.isPolling = false;
     this.pollingInterval = null;
-    this.pollingDelay = 2000; // 2 ,
-    // segundos (velocidade normal)
+    this.pollingDelay = 2000; // 2 segundos (velocidade normal)
     this.listeners = new Map();
     this.lastUpdate = null;
     this.apiUrl = config.API_URL;
     this.initialDataSent = false;
-    console.log('🔧 PollingService configurado com URL:', this.apiUrl);
+    
+    // Só logar no cliente
+    if (typeof window !== 'undefined') {
+      console.log('🔧 PollingService configurado com URL:', this.apiUrl);
+    }
   }
 
   connect() {
     if (this.isPolling) {
-      console.log('🔄 Polling já está ativo');
+      if (typeof window !== 'undefined') {
+        console.log('🔄 Polling já está ativo');
+      }
       return;
     }
 
-    console.log('🔌 Iniciando polling...');
+    if (typeof window !== 'undefined') {
+      console.log('🔌 Iniciando polling...');
+    }
     this.isPolling = true;
     this.startPolling();
     this.notifyListeners('connected', {});
@@ -37,7 +44,9 @@ class PollingService {
 
   async checkForUpdates() {
     try {
-      console.log('🔍 Verificando atualizações em:', `${this.apiUrl}/api/notifications/check`);
+      if (typeof window !== 'undefined') {
+        console.log('🔍 Verificando atualizações em:', `${this.apiUrl}/api/notifications/check`);
+      }
       
       const response = await fetch(`${this.apiUrl}/api/notifications/check`, {
         method: 'GET',
@@ -46,31 +55,43 @@ class PollingService {
         },
       });
 
-      console.log('📡 Resposta recebida:', response.status, response.statusText);
+      if (typeof window !== 'undefined') {
+        console.log('📡 Resposta recebida:', response.status, response.statusText);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('📊 Dados recebidos do backend:', data);
-      console.log('📊 Dashboard data:', data.dashboard);
-      console.log('📊 Sources count:', data.dashboard?.sourcesCount);
-      console.log('📊 News count:', data.dashboard?.newsCount);
+      if (typeof window !== 'undefined') {
+        console.log('📊 Dados recebidos do backend:', data);
+        console.log('📊 Dashboard data:', data.dashboard);
+      }
+      if (typeof window !== 'undefined') {
+        console.log('📊 Sources count:', data.dashboard?.sourcesCount);
+        console.log('📊 News count:', data.dashboard?.newsCount);
+      }
       
       // Sempre notificar dados iniciais na primeira chamada
       if (!this.initialDataSent) {
-        console.log('📊 Enviando dados iniciais:', data);
+        if (typeof window !== 'undefined') {
+          console.log('📊 Enviando dados iniciais:', data);
+        }
         this.notifyListeners('initial_data', data);
         this.initialDataSent = true;
       }
       
       // Sempre notificar atualizações (não só se hasUpdates)
-      console.log('📨 Enviando atualizações:', data);
+      if (typeof window !== 'undefined') {
+        console.log('📨 Enviando atualizações:', data);
+      }
       this.notifyListeners('update', data);
 
     } catch (error) {
-      console.error('❌ Erro ao verificar atualizações:', error);
+      if (typeof window !== 'undefined') {
+        console.error('❌ Erro ao verificar atualizações:', error);
+      }
       this.notifyListeners('error', error);
     }
   }

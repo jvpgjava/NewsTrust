@@ -1,5 +1,5 @@
 // Configuração de ambiente para desenvolvimento e produção
-const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+const isDevelopment = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.location.hostname === 'localhost');
 
 export const config = {
   API_URL: isDevelopment 
@@ -10,5 +10,8 @@ export const config = {
     : process.env.REACT_APP_WS_URL || 'wss://api.newstrust.me'
 };
 
-console.log('🔧 Configuração carregada:', config);
-console.log('🌍 Ambiente:', isDevelopment ? 'desenvolvimento' : 'produção');
+// Só logar no cliente
+if (typeof window !== 'undefined') {
+  console.log('🔧 Configuração carregada:', config);
+  console.log('🌍 Ambiente:', isDevelopment ? 'desenvolvimento' : 'produção');
+}
