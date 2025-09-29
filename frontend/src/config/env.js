@@ -4,10 +4,10 @@ const isDevelopment = process.env.NODE_ENV === 'development' || window.location.
 export const config = {
   API_URL: isDevelopment 
     ? 'http://localhost:3001' 
-    : process.env.REACT_APP_API_URL || 'https://newstrust-backend.vercel.app',
+    : process.env.REACT_APP_API_URL || 'https://api.newstrust.me',
   WS_URL: isDevelopment 
     ? 'ws://localhost:3001' 
-    : process.env.REACT_APP_WS_URL || 'wss://newstrust-backend.vercel.app'
+    : process.env.REACT_APP_WS_URL || 'wss://api.newstrust.me'
 };
 
 console.log('🔧 Configuração carregada:', config);

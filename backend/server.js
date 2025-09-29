@@ -103,7 +103,7 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://newstrust.me', 'http://localhost:3001'],
+  origin: ['http://localhost:3000', 'https://newstrust.me', 'https://api.newstrust.me', 'http://localhost:3001'],
   credentials: true
 }));
 app.use(compression());
