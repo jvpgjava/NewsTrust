@@ -40,9 +40,9 @@ if (process.env.DATABASE_URL) {
   console.log('✅ Usando DATABASE_URL para conexão');
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
-    max: 20, // máximo de conexões na pool
-    idleTimeoutMillis: 30000, // tempo limite de inatividade
-    connectionTimeoutMillis: 10000, // aumento tempo limite para Supabase
+    max: 10, // reduzir conexões para Vercel
+    idleTimeoutMillis: 60000, // 1 minuto
+    connectionTimeoutMillis: 30000, // 30 segundos para Supabase
     // SSL obrigatório para Supabase em produção
     ssl: process.env.NODE_ENV === 'production' ? {
       rejectUnauthorized: false,
@@ -85,11 +85,14 @@ pool.on('error', (err) => {
   console.error('❌ Erro na pool do PostgreSQL:', err);
 });
 
-// Função para inicializar o banco de dados
-export async function initializeDatabase() {
-  try {
-    // Verificar se as tabelas existem
-    const client = await pool.connect();
+// Função para inicializar o banco de dados com retry
+export async function initializeDatabase(retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`🔄 Tentativa ${attempt}/${retries} de conexão com o banco...`);
+      
+      // Verificar se as tabelas existem
+      const client = await pool.connect();
 
     // Criar tabela de fontes se não existir
     await client.query(`
@@ -228,9 +231,18 @@ export async function initializeDatabase() {
     client.release();
     console.log('✅ Tabelas e índices criados/verificados com sucesso');
 
-  } catch (error) {
-    console.error('❌ Erro ao inicializar banco de dados:', error);
-    throw error;
+    } catch (error) {
+      console.error(`❌ Erro na tentativa ${attempt}/${retries}:`, error.message);
+      
+      if (attempt < retries) {
+        const delay = attempt * 2000; // 2s, 4s, 6s
+        console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.error('❌ Todas as tentativas de conexão falharam');
+        throw error;
+      }
+    }
   }
 }
 
