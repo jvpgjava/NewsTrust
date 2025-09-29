@@ -21,31 +21,7 @@ router.get('/check', async (req, res) => {
             recent: recentAnalyses.length
         });
 
-        // Dados do dashboard
-        const dashboardData = {
-            sourcesCount: 13, // Valor fixo por enquanto
-            newsCount: counts.total,
-            fakeNewsCount: counts.fake,
-            averageCredibility: recentAnalyses.length > 0 ? 
-                recentAnalyses.reduce((sum, a) => sum + a.confidence, 0) / recentAnalyses.length : 0,
-            recentAnalyses: recentAnalyses.map(analysis => ({
-                id: analysis.id,
-                title: analysis.title,
-                texto: analysis.content,
-                credibility: analysis.confidence,
-                risk_level: analysis.risk_level,
-                is_fake_news: analysis.is_fake_news
-            })),
-            riskDistribution: {
-                low: recentAnalyses.filter(a => a.risk_level === 'baixo').length,
-                medium: recentAnalyses.filter(a => a.risk_level === 'medio').length,
-                high: recentAnalyses.filter(a => a.risk_level === 'alto').length
-            },
-            trendData: [], // Por enquanto vazio
-            connectionsCount: networkData.news.connections.length
-        };
-
-        // Dados da rede (simplificado)
+        // Dados da rede (simplificado) - DECLARAR PRIMEIRO
         const networkData = {
             sources: {
                 nodes: [],
@@ -81,6 +57,30 @@ router.get('/check', async (req, res) => {
                 }
             }
         }
+
+        // Dados do dashboard - AGORA PODE USAR networkData
+        const dashboardData = {
+            sourcesCount: 13, // Valor fixo por enquanto
+            newsCount: counts.total,
+            fakeNewsCount: counts.fake,
+            averageCredibility: recentAnalyses.length > 0 ? 
+                recentAnalyses.reduce((sum, a) => sum + a.confidence, 0) / recentAnalyses.length : 0,
+            recentAnalyses: recentAnalyses.map(analysis => ({
+                id: analysis.id,
+                title: analysis.title,
+                texto: analysis.content,
+                credibility: analysis.confidence,
+                risk_level: analysis.risk_level,
+                is_fake_news: analysis.is_fake_news
+            })),
+            riskDistribution: {
+                low: recentAnalyses.filter(a => a.risk_level === 'baixo').length,
+                medium: recentAnalyses.filter(a => a.risk_level === 'medio').length,
+                high: recentAnalyses.filter(a => a.risk_level === 'alto').length
+            },
+            trendData: [], // Por enquanto vazio
+            connectionsCount: networkData.news.connections.length
+        };
 
         console.log('✅ Dados carregados via Supabase API:', {
             sources: dashboardData.sourcesCount,
