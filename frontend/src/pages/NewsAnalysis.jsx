@@ -565,8 +565,8 @@ const NewsAnalysis = () => {
                                       <span className="text-xs sm:text-sm font-medium text-gray-600">Conteúdo extraído (preview):</span>
                                       <p className="text-xs sm:text-sm text-gray-700 mt-2 bg-white p-2 sm:p-3 rounded border">
                                         {contentResult.fileInfo.extractedContent}
-                                      </p>
-                                    </div>
+                              </p>
+                            </div>
                                   )}
                                 </div>
                               )}
@@ -574,13 +574,13 @@ const NewsAnalysis = () => {
                               <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200">
                                 <span className="text-xs sm:text-sm font-medium text-gray-700">Nível de Risco</span>
                                 <div className="mt-2 sm:mt-3">
-                                  <div className="mb-2">
+                                <div className="mb-2">
                                     <span className="text-base sm:text-lg font-bold text-gray-900">
                                       {contentResult.riskLevel ? contentResult.riskLevel.toUpperCase() : 'N/A'}
                                     </span>
-                                  </div>
+                                </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
-                                    <div
+                                  <div
                                       className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(contentResult.riskLevel)}`}
                                     style={{
                                         width: getRiskLevelBarWidth(contentResult.riskLevel)
@@ -627,9 +627,9 @@ const NewsAnalysis = () => {
                               <p className="text-xs sm:text-sm text-gray-700">
                               {contentResult.detailedAnalysis || 'Análise na Web + IA - Resultados: 0'}
                             </p>
-                            </div>
                           </div>
                         </div>
+                      </div>
                       </div>
                     ) : null}
                   </div>

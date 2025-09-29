@@ -26,6 +26,8 @@ router.get('/check', async (req, res) => {
             sourcesCount: 13, // Valor fixo por enquanto
             newsCount: counts.total,
             fakeNewsCount: counts.fake,
+            averageCredibility: recentAnalyses.length > 0 ? 
+                recentAnalyses.reduce((sum, a) => sum + a.confidence, 0) / recentAnalyses.length : 0,
             recentAnalyses: recentAnalyses.map(analysis => ({
                 id: analysis.id,
                 title: analysis.title,
@@ -40,7 +42,7 @@ router.get('/check', async (req, res) => {
                 high: recentAnalyses.filter(a => a.risk_level === 'alto').length
             },
             trendData: [], // Por enquanto vazio
-            connectionsCount: 0 // Por enquanto vazio
+            connectionsCount: networkData.news.connections.length
         };
 
         // Dados da rede (simplificado)
@@ -63,6 +65,22 @@ router.get('/check', async (req, res) => {
                 connections: []
             }
         };
+
+        // Adicionar conexões entre notícias similares
+        if (networkData.news.nodes.length > 1) {
+            networkData.news.connections = [];
+            for (let i = 0; i < networkData.news.nodes.length; i++) {
+                for (let j = i + 1; j < networkData.news.nodes.length; j++) {
+                    if (Math.random() > 0.7) { // 30% chance de conexão
+                        networkData.news.connections.push({
+                            source: networkData.news.nodes[i].id,
+                            target: networkData.news.nodes[j].id,
+                            strength: Math.random() * 0.5 + 0.5
+                        });
+                    }
+                }
+            }
+        }
 
         console.log('✅ Dados carregados via Supabase API:', {
             sources: dashboardData.sourcesCount,

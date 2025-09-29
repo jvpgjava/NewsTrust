@@ -48,6 +48,7 @@ export default function Dashboard() {
         connectionsCount: data.dashboard?.connectionsCount || 0,
         newsCount: data.dashboard?.newsCount || 0,
         fakeNewsCount: data.dashboard?.fakeNewsCount || 0,
+        averageCredibility: data.dashboard?.averageCredibility || 0,
         trendData: data.dashboard?.trendData || [],
         riskDistribution: data.dashboard?.riskDistribution || { low: 0, medium: 0, high: 0 }
       };
