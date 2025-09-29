@@ -127,7 +127,9 @@ const NewsAnalysis = () => {
       }
       
       console.log('📊 Dados recebidos da análise:', response.data)
-      setContentResult(response.data)
+      // Mapear corretamente os dados da resposta
+      const analysisData = response.data.analysis || response.data
+      setContentResult(analysisData)
       toast.success('Análise de conteúdo concluída!')
     } catch (error) {
       console.error('Erro na análise de conteúdo:', error)
