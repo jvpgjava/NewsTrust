@@ -36,15 +36,24 @@ export default function Dashboard() {
     // Listener para dados iniciais
     const handleInitialData = (data) => {
       console.log('📊 Dashboard - Dados iniciais recebidos:', data);
+      console.log('📊 Dashboard - sourcesCount:', data.dashboard?.sourcesCount);
+      console.log('📊 Dashboard - newsCount:', data.dashboard?.newsCount);
+      console.log('📊 Dashboard - recentAnalyses:', data.recentAnalyses?.length);
+      console.log('📊 Dashboard - data.dashboard completo:', data.dashboard);
+      
       clearTimeout(loadingTimeout); // Cancelar timeout
-      setStats({
+      
+      const newStats = {
         sourcesCount: data.dashboard?.sourcesCount || 0,
         connectionsCount: data.dashboard?.connectionsCount || 0,
         newsCount: data.dashboard?.newsCount || 0,
         fakeNewsCount: data.dashboard?.fakeNewsCount || 0,
         trendData: data.dashboard?.trendData || [],
         riskDistribution: data.dashboard?.riskDistribution || { low: 0, medium: 0, high: 0 }
-      });
+      };
+      
+      console.log('📊 Dashboard - Stats que serão definidos:', newStats);
+      setStats(newStats);
       setRecentAnalyses(data.recentAnalyses || []);
       setLoading(false);
     };
@@ -74,26 +83,18 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Chart data from stats (only real data) - Ajustado para progressão mais suave e equilibrada
-  const trendData = stats?.trendData || [
-    { month: '2025-06', count: 8 },
-    { month: '2025-07', count: 12 },
-    { month: '2025-08', count: 15 },
-    { month: '2025-09', count: 18 },
-    { month: '2025-10', count: 16 },
-    { month: '2025-11', count: 20 },
-    { month: '2025-12', count: 22 }
-  ]
+  // Chart data from stats (only real data)
+  const trendData = stats?.trendData || []
 
-  // Converter riskDistribution de objeto para array - Ajustado para distribuição mais equilibrada
+  // Converter riskDistribution de objeto para array
   const riskDistribution = stats?.riskDistribution ? [
-    { name: 'Baixo Risco', value: stats.riskDistribution.baixo || 0, color: '#10B981' },
-    { name: 'Médio Risco', value: stats.riskDistribution.medio || 0, color: '#F59E0B' },
-    { name: 'Alto Risco', value: stats.riskDistribution.alto || 0, color: '#EF4444' }
+    { name: 'Baixo Risco', value: stats.riskDistribution.low || 0, color: '#10B981' },
+    { name: 'Médio Risco', value: stats.riskDistribution.medium || 0, color: '#F59E0B' },
+    { name: 'Alto Risco', value: stats.riskDistribution.high || 0, color: '#EF4444' }
   ] : [
-    { name: 'Baixo Risco', value: 45, color: '#10B981' },
-    { name: 'Médio Risco', value: 30, color: '#F59E0B' },
-    { name: 'Alto Risco', value: 25, color: '#EF4444' }
+    { name: 'Baixo Risco', value: 0, color: '#10B981' },
+    { name: 'Médio Risco', value: 0, color: '#F59E0B' },
+    { name: 'Alto Risco', value: 0, color: '#EF4444' }
   ]
 
   if (loading) {
@@ -139,28 +140,28 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
+           <div className="flex items-center">
+             <div className="flex-shrink-0">
               <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-            </div>
+             </div>
             <div className="ml-3 sm:ml-4">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Notícias Verificadas</p>
               <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{stats?.newsCount || 0}</p>
-            </div>
-          </div>
-        </div>
+             </div>
+           </div>
+         </div>
 
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
+           <div className="flex items-center">
+             <div className="flex-shrink-0">
               <XCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-            </div>
+             </div>
             <div className="ml-3 sm:ml-4">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Fake News Detectadas</p>
               <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">{stats?.fakeNewsCount || 0}</p>
-            </div>
-          </div>
-        </div>
+             </div>
+           </div>
+         </div>
       </div>
 
       {/* Charts */}
@@ -175,7 +176,10 @@ export default function Dashboard() {
                 <XAxis 
                   dataKey="month" 
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(value) => value.split('-')[1] + '/' + value.split('-')[0].slice(2)}
+                  tickFormatter={(value) => {
+                    const [year, month] = value.split('-');
+                    return `${month}/${year.slice(2)}`;
+                  }}
                   axisLine={{ stroke: '#e0e0e0' }}
                   tickLine={{ stroke: '#e0e0e0' }}
                 />
@@ -187,7 +191,10 @@ export default function Dashboard() {
                   tickCount={6}
                 />
                 <Tooltip 
-                  labelFormatter={(value) => `Mês: ${value}`}
+                  labelFormatter={(value) => {
+                    const [year, month] = value.split('-');
+                    return `Mês: ${month}/${year}`;
+                  }}
                   formatter={(value) => [`${value} análises`, 'Total']}
                   contentStyle={{
                     backgroundColor: 'white',
@@ -206,8 +213,8 @@ export default function Dashboard() {
                   activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2, fill: 'white' }}
                   connectNulls={false}
                 />
-              </LineChart>
-            </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
           </div>
           
           {/* Legenda do Gráfico de Detecção */}
@@ -241,23 +248,23 @@ export default function Dashboard() {
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Distribuição de Risco</h3>
           <div className="w-full h-[350px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={riskDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {riskDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={riskDistribution}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {riskDistribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
           </div>
           <div className="mt-3 sm:mt-4 space-y-1 sm:space-y-2">
             {riskDistribution.map((item, index) => (
@@ -321,5 +328,5 @@ export default function Dashboard() {
       </div>
 
     </div>
-    )
+  )
 }

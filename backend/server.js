@@ -25,7 +25,7 @@ import sourceAnalysisRoutes from './routes/source-analysis.js';
 import systemRouter from './routes/system.js';
 import fileUploadRoutes from './routes/file-upload.js';
 import contactRoutes from './routes/contact.js';
-import notificationsRoutes from './routes/notifications.js';
+import notificationsRoutes from './routes/notifications-simple.js';
 
 // Configuração do dotenv
 dotenv.config();
@@ -91,10 +91,10 @@ const swaggerOptions = {
 
 const specs = swaggerJsdoc(swaggerOptions);
 
-// Rate limiting
+// Rate limiting - muito permissivo para desenvolvimento
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limite por IP
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 minuto
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000, // limite muito alto para desenvolvimento
   message: {
     error: 'Muitas requisições deste IP, tente novamente mais tarde.'
   }
@@ -103,12 +103,13 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'https://newstrust.me', 'http://localhost:3001'],
   credentials: true
 }));
 app.use(compression());
 app.use(morgan('combined'));
-app.use(limiter);
+// Rate limiting desabilitado para desenvolvimento
+// app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 

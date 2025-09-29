@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Conexão</title>
+</head>
+<body>
+    <h1>Teste de Conexão Frontend-Backend</h1>
+    <div id="resultado"></div>
+    <button onclick="testarConexao()">Testar Conexão</button>
+    
+    <script>
+        async function testarConexao() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>Testando conexão...</p>';
+            
+            try {
+                console.log('🔍 Testando conexão com backend...');
+                const response = await fetch('http://localhost:3001/api/notifications/check', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                console.log('📡 Resposta recebida:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Dados recebidos:', data);
+                
+                resultado.innerHTML = `
+                    <h2>✅ Conexão funcionando!</h2>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Fontes:</strong> ${data.dashboard.sourcesCount}</p>
+                    <p><strong>Conexões:</strong> ${data.dashboard.connectionsCount}</p>
+                    <p><strong>Notícias:</strong> ${data.dashboard.newsCount}</p>
+                    <p><strong>Fake News:</strong> ${data.dashboard.fakeNewsCount}</p>
+                    <h3>Dados completos:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                resultado.innerHTML = `
+                    <h2>❌ Erro na conexão</h2>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Stack:</strong> ${error.stack}</p>
+                `;
+            }
+        }
+        
+        // Testar automaticamente ao carregar
+        window.onload = testarConexao;
+    </script>
+</body>
+</html>

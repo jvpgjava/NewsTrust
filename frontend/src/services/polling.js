@@ -1,12 +1,16 @@
+import { config } from '../config/env.js';
+
 class PollingService {
   constructor() {
     this.isPolling = false;
     this.pollingInterval = null;
-    this.pollingDelay = 2000; // 2 segundos
+    this.pollingDelay = 2000; // 2 ,
+    // segundos (velocidade normal)
     this.listeners = new Map();
     this.lastUpdate = null;
-    this.apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.newstrust.me';
+    this.apiUrl = config.API_URL;
     this.initialDataSent = false;
+    console.log('🔧 PollingService configurado com URL:', this.apiUrl);
   }
 
   connect() {
@@ -33,18 +37,26 @@ class PollingService {
 
   async checkForUpdates() {
     try {
-      const response = await fetch(`${this.apiUrl}/.netlify/functions/notifications-check`, {
+      console.log('🔍 Verificando atualizações em:', `${this.apiUrl}/api/notifications/check`);
+      
+      const response = await fetch(`${this.apiUrl}/api/notifications/check`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('📡 Resposta recebida:', response.status, response.statusText);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('📊 Dados recebidos do backend:', data);
+      console.log('📊 Dashboard data:', data.dashboard);
+      console.log('📊 Sources count:', data.dashboard?.sourcesCount);
+      console.log('📊 News count:', data.dashboard?.newsCount);
       
       // Sempre notificar dados iniciais na primeira chamada
       if (!this.initialDataSent) {
@@ -53,10 +65,9 @@ class PollingService {
         this.initialDataSent = true;
       }
       
-      if (data.hasUpdates) {
-        console.log('📨 Atualizações encontradas:', data);
-        this.notifyListeners('update', data);
-      }
+      // Sempre notificar atualizações (não só se hasUpdates)
+      console.log('📨 Enviando atualizações:', data);
+      this.notifyListeners('update', data);
 
     } catch (error) {
       console.error('❌ Erro ao verificar atualizações:', error);

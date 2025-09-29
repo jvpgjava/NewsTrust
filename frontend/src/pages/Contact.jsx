@@ -26,7 +26,7 @@ const Contact = () => {
 
   // Lista de domínios de email confiáveis
   const trustedDomains = [
-    'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com',
+    'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com',
     'icloud.com', 'me.com', 'mac.com', 'aol.com', 'protonmail.com',
     'tutanota.com', 'zoho.com', 'yandex.com', 'mail.com', 'gmx.com',
     'web.de', 't-online.de', 'orange.fr', 'free.fr', 'laposte.net',
@@ -34,6 +34,9 @@ const Contact = () => {
     'r7.com', 'folha.com.br', 'estadao.com.br', 'g1.com.br', 'uol.com',
     'yahoo.com.br', 'hotmail.com.br', 'outlook.com.br', 'live.com.br'
   ];
+
+  // Provedores principais recomendados
+  const mainProviders = ['gmail.com', 'yahoo.com', 'outlook.com'];
 
   // Função para validar domínio do email
   const validateEmailDomain = (email) => {
@@ -47,12 +50,33 @@ const Contact = () => {
 
   // Função para sugerir domínios similares
   const getSimilarDomains = (inputDomain) => {
-    if (!inputDomain) return [];
+    if (!inputDomain) return mainProviders;
     
-    return trustedDomains.filter(domain => 
-      domain.includes(inputDomain.toLowerCase()) || 
-      inputDomain.toLowerCase().includes(domain)
-    ).slice(0, 3);
+    const suggestions = [];
+    
+    // Primeiro, sempre incluir os provedores principais
+    suggestions.push(...mainProviders);
+    
+    // Procurar por domínios similares
+    trustedDomains.forEach(domain => {
+      if (domain.includes(inputDomain.toLowerCase()) || inputDomain.toLowerCase().includes(domain)) {
+        if (!suggestions.includes(domain)) {
+          suggestions.push(domain);
+        }
+      }
+    });
+    
+    // Se não encontrar similares, adicionar mais opções confiáveis
+    if (suggestions.length <= 3) {
+      const additionalProviders = ['icloud.com', 'protonmail.com', 'zoho.com'];
+      additionalProviders.forEach(provider => {
+        if (!suggestions.includes(provider)) {
+          suggestions.push(provider);
+        }
+      });
+    }
+    
+    return suggestions.slice(0, 6); // Máximo 6 sugestões
   };
 
   const handleContactSubmit = async (e) => {
@@ -85,7 +109,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/.netlify/functions/contact`, contactData);
+      await axios.post('http://localhost:3001/api/contact', contactData);
       setShowSuccessModal(true);
       setContactData({ name: '', email: '', message: '' });
       setValidationErrors({ name: false, email: false, message: false });
@@ -158,22 +182,31 @@ const Contact = () => {
               )}
               {emailDomainError && (
                 <div className="mt-1">
-                  <p className="text-red-500 text-sm font-medium">Use um domínio confiável. Sugestões:</p>
+                  <p className="text-red-500 text-sm font-medium">Use um provedor confiável. Recomendamos:</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {getSimilarDomains(contactData.email.split('@')[1] || '').map((domain, index) => (
                       <span 
                         key={index}
-                        className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                        className={`text-xs px-2 py-1 rounded cursor-pointer transition-colors ${
+                          mainProviders.includes(domain) 
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200 font-semibold' 
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
                         onClick={() => {
                           const emailPrefix = contactData.email.split('@')[0] || '';
                           setContactData({ ...contactData, email: `${emailPrefix}@${domain}` });
                           setEmailDomainError(false);
                         }}
+                        title={mainProviders.includes(domain) ? 'Provedor altamente recomendado' : 'Provedor confiável'}
                       >
                         {domain}
+                        {mainProviders.includes(domain) && ' ⭐'}
                       </span>
                     ))}
                   </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    ⭐ = Provedores mais confiáveis (Gmail, Yahoo, Outlook)
+                  </p>
                 </div>
               )}
             </div>

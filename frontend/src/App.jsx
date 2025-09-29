@@ -9,7 +9,7 @@ import About from "./pages/About"
 import Contact from "./pages/Contact"
 
 function App() {
-  const [currentPage, setCurrentPage] = useState("dashboard")
+  const [currentPage, setCurrentPage] = useState("news-analysis")
 
   const renderPage = () => {
     switch (currentPage) {
@@ -24,7 +24,7 @@ function App() {
       case "contact":
         return <Contact />
       default:
-        return <Dashboard />
+        return <NewsAnalysis />
     }
   }
 

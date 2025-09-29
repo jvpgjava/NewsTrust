@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Frontend</title>
+</head>
+<body>
+    <h1>Teste de Conexão Frontend</h1>
+    <div id="resultado"></div>
+    
+    <script>
+        async function testarConexao() {
+            try {
+                console.log('🔍 Testando conexão com backend...');
+                const response = await fetch('http://localhost:3001/api/notifications/check');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Dados recebidos:', data);
+                
+                document.getElementById('resultado').innerHTML = `
+                    <h2>✅ Conexão funcionando!</h2>
+                    <p><strong>Fontes:</strong> ${data.dashboard.sourcesCount}</p>
+                    <p><strong>Notícias:</strong> ${data.dashboard.newsCount}</p>
+                    <p><strong>Fontes recentes:</strong> ${data.newSources.length}</p>
+                    <p><strong>Análises recentes:</strong> ${data.newAnalyses.length}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                document.getElementById('resultado').innerHTML = `
+                    <h2>❌ Erro na conexão</h2>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        // Testar automaticamente
+        testarConexao();
+    </script>
+</body>
+</html>

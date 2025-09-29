@@ -15,6 +15,8 @@ export default function NetworkVisualization() {
   const [simulation, setSimulation] = useState(null)
   const [zoomLevel, setZoomLevel] = useState(1)
   const [activeGraph, setActiveGraph] = useState('sources') // 'sources' ou 'news'
+  const [graphInitialized, setGraphInitialized] = useState(false)
+  const [lastGraphType, setLastGraphType] = useState(null)
   const svgRef = useRef()
 
   useEffect(() => {
@@ -99,33 +101,51 @@ export default function NetworkVisualization() {
 
   useEffect(() => {
     const currentGraphData = activeGraph === 'sources' ? sourcesGraphData : newsGraphData;
-    console.log(`🎯 Recriando visualização para grafo ${activeGraph}:`, {
+    console.log(`🎯 Verificando visualização para grafo ${activeGraph}:`, {
       nodes: currentGraphData.nodes.length,
-      links: currentGraphData.links.length
+      links: currentGraphData.links.length,
+      graphInitialized: graphInitialized
     });
 
-    if (currentGraphData.nodes.length > 0) {
+    // Verificar se trocou de tipo de grafo
+    const graphTypeChanged = lastGraphType !== null && lastGraphType !== activeGraph;
+    
+    // Só criar se tem dados e (ainda não foi inicializado OU trocou de tipo de grafo)
+    if (currentGraphData.nodes.length > 0 && (!graphInitialized || graphTypeChanged)) {
+      console.log('🔄 Criando visualização:', graphInitialized ? 'troca de grafo' : 'primeira vez');
+      
       // Parar simulação anterior se existir
       if (simulation) {
         simulation.stop();
       }
 
+      // Resetar inicialização se trocou de grafo
+      if (graphTypeChanged) {
+        setGraphInitialized(false);
+        // Limpar nó selecionado ao trocar de grafo
+        setSelectedNode(null);
+        console.log('🧹 Nó selecionado limpo ao trocar de grafo');
+      }
+
       createVisualization(currentGraphData);
+      setLastGraphType(activeGraph);
+    } else if (currentGraphData.nodes.length > 0 && graphInitialized) {
+      console.log('✅ Grafo já inicializado, mantendo estável - zoom preservado');
+      // Atualizar dados sem recriar o grafo
+      updateGraphData(currentGraphData);
     }
   }, [sourcesGraphData, newsGraphData, activeGraph]);
 
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      const currentGraphData = activeGraph === 'sources' ? sourcesGraphData : newsGraphData;
-      if (currentGraphData.nodes.length > 0) {
-        createVisualization(currentGraphData);
-      }
+      // Não recriar grafo no resize, apenas ajustar zoom se necessário
+      console.log('📏 Redimensionamento da janela detectado');
     }
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [sourcesGraphData, newsGraphData, activeGraph])
+  }, [])
 
   const handleZoomIn = () => {
     if (svgRef.current) {
@@ -176,14 +196,78 @@ export default function NetworkVisualization() {
     }
   }
 
+  const updateGraphData = (graphData) => {
+    if (!svgRef.current) return;
+    
+    const svg = d3.select(svgRef.current)
+    const g = svg.select("g")
+    
+    // Preservar transform atual
+    const currentTransform = g.attr("transform")
+    
+    // Atualizar apenas os dados, não o zoom
+    const simulation = d3.forceSimulation(graphData.nodes)
+      .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(200))
+      .force("charge", d3.forceManyBody().strength(-600))
+      .force("center", d3.forceCenter(600, 300))
+      .force("collision", d3.forceCollide().radius(60))
+      .alphaDecay(0.01)
+      .velocityDecay(0.8)
+      .on("tick", () => {
+        g.selectAll(".link")
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y)
+        
+        g.selectAll(".node")
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y)
+        
+        g.selectAll(".node-label")
+          .attr("x", d => d.x + 8)
+          .attr("y", d => d.y + 4)
+      })
+      .on("end", () => {
+        console.log('✅ Simulação atualizada sem resetar zoom');
+      })
+    
+    setSimulation(simulation)
+    
+    // Restaurar transform
+    if (currentTransform) {
+      g.attr("transform", currentTransform)
+    }
+  }
+
   const createVisualization = (graphData) => {
     console.log('🎨 Criando visualização com dados:', {
       nodes: graphData.nodes.length,
       links: graphData.links.length
     });
 
+    if (!svgRef.current) {
+      console.log('⚠️ svgRef.current não está disponível ainda');
+      return;
+    }
+
+    // Evitar recriar se já foi inicializado
+    if (graphInitialized) {
+      console.log('🛑 Grafo já inicializado, não recriando');
+      return;
+    }
+
     const svg = d3.select(svgRef.current)
-    svg.selectAll("*").remove()
+    
+    // Preservar zoom atual se existir
+    let currentTransform = null
+    const existingG = svg.select("g")
+    if (!existingG.empty()) {
+      currentTransform = existingG.attr("transform")
+    }
+    
+    // Remover apenas elementos de dados, não o zoom
+    svg.selectAll("g > *").remove()
 
     const container = svgRef.current.parentElement
     const width = Math.min(container.clientWidth - 48, 1200)
@@ -194,25 +278,75 @@ export default function NetworkVisualization() {
     svg.attr("viewBox", `0 0 ${width} ${height}`)
     svg.attr("preserveAspectRatio", "xMidYMid meet")
 
-    const g = svg.append("g")
+    let g = svg.select("g")
+    if (g.empty()) {
+      g = svg.append("g")
+    }
 
-    const zoom = d3.zoom()
-      .scaleExtent([0.1, 2.0])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform)
-        setZoomLevel(event.transform.k)
-      })
+    // Restaurar transform anterior se existir
+    if (currentTransform) {
+      g.attr("transform", currentTransform)
+    }
 
-    svg.call(zoom)
+    // Só criar zoom se não existir
+    if (svg.select(".zoom-layer").empty()) {
+      const zoom = d3.zoom()
+        .scaleExtent([0.3, 3.0])
+        .on("zoom", (event) => {
+          g.attr("transform", event.transform)
+          setZoomLevel(event.transform.k)
+        })
+        .filter((event) => {
+          // Permitir zoom apenas com scroll e botões de zoom
+          return event.type === 'wheel' || event.type === 'dblclick' || event.type === 'mousedown'
+        })
 
-    // Create force simulation
+      svg.call(zoom)
+      svg.classed("zoom-layer", true)
+    }
+
+    // Create force simulation com parada automática
     const simulation = d3.forceSimulation(graphData.nodes)
-      .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(100))
-      .force("charge", d3.forceManyBody().strength(-300))
+      .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(200)) // Distância ainda maior
+      .force("charge", d3.forceManyBody().strength(-600)) // Muito mais repulsão
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(30))
+      .force("collision", d3.forceCollide().radius(60)) // Raio ainda maior
+      .alphaDecay(0.03) // Decaimento mais lento para melhor posicionamento
+      .velocityDecay(0.3) // Menos fricção para movimento mais suave
+      .on("tick", () => {
+        // Atualizar posições dos elementos
+        link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        node
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y);
+
+        label
+          .attr("x", d => d.x)
+          .attr("y", d => d.y);
+      })
+      .on("end", () => {
+        console.log("🎯 Simulação estabilizada automaticamente");
+      });
 
     setSimulation(simulation)
+
+    // Parar simulação quando alpha for muito baixo (estabilização natural)
+    const checkStability = () => {
+      if (simulation.alpha() < 0.01) {
+        simulation.stop();
+        console.log("🛑 Simulação parada por estabilização natural");
+      } else {
+        setTimeout(checkStability, 100);
+      }
+    };
+    
+    // Iniciar verificação após 1 segundo
+    setTimeout(checkStability, 1000);
 
     // Create links
     const link = g.append("g")
@@ -229,11 +363,11 @@ export default function NetworkVisualization() {
           return "#8B5CF6"; // Roxo
         }
       })
-      .attr("stroke-opacity", 0.7)
-      .attr("stroke-width", d => Math.sqrt(d.weight || 1) * 3)
+      .attr("stroke-opacity", d => (d.similarity || 0.5) * 0.8 + 0.2)
+      .attr("stroke-width", d => (d.similarity || 0.5) * 4 + 1)
       .style("cursor", "pointer")
       .on("mouseover", function (event, d) {
-        d3.select(this).attr("stroke-opacity", 1).attr("stroke-width", Math.sqrt(d.weight || 1) * 4);
+        d3.select(this).attr("stroke-opacity", 1).attr("stroke-width", (d.similarity || 0.5) * 6 + 2);
 
         // Mostrar tooltip com informações da conexão
         const tooltip = d3.select("body").append("div")
@@ -248,19 +382,19 @@ export default function NetworkVisualization() {
           .style("z-index", "1000");
 
         tooltip.html(`
-          <strong>${d.label}</strong><br/>
-          Tipo: ${d.type === 'credibility_similarity' ? 'Similaridade de Credibilidade' : 'Similaridade de Conteúdo'}<br/>
-          Peso: ${(d.weight * 100).toFixed(1)}%
+          <strong>Conexão</strong><br/>
+          Tipo: ${d.type === 'credibility' ? 'Similaridade de Credibilidade' : 'Similaridade de Conteúdo'}<br/>
+          Similaridade: ${((d.similarity || 0.5) * 100).toFixed(1)}%
         `)
           .style("left", (event.pageX + 10) + "px")
           .style("top", (event.pageY - 10) + "px");
       })
       .on("mouseout", function (event, d) {
-        d3.select(this).attr("stroke-opacity", 0.7).attr("stroke-width", Math.sqrt(d.weight || 1) * 3);
+        d3.select(this).attr("stroke-opacity", (d.similarity || 0.5) * 0.8 + 0.2).attr("stroke-width", (d.similarity || 0.5) * 4 + 1);
         d3.selectAll(".tooltip").remove();
       })
 
-    // Create nodes
+    
     const node = g.append("g")
       .selectAll("circle")
       .data(graphData.nodes)
@@ -270,7 +404,7 @@ export default function NetworkVisualization() {
           const credibility = d.credibility || d.peso || 0.5
           return Math.max(8, credibility * 20)
         } else {
-          const confidence = d.confidence || 0.5
+          const confidence = d.credibility || d.confidence || 0.5
           return Math.max(8, confidence * 20)
         }
       })
@@ -312,29 +446,17 @@ export default function NetworkVisualization() {
       .selectAll("text")
       .data(graphData.nodes)
       .enter().append("text")
-      .text(d => d.name.length > 15 ? d.name.substring(0, 15) + "..." : d.name)
+      .text(d => {
+        if (!d || !d.name) return "Nó sem nome";
+        return d.name.length > 15 ? d.name.substring(0, 15) + "..." : d.name;
+      })
       .attr("font-size", "12px")
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
       .attr("fill", "#333")
       .style("pointer-events", "none")
 
-    // Update positions on tick
-    simulation.on("tick", () => {
-      link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y)
-
-      node
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y)
-
-      label
-        .attr("x", d => d.x)
-        .attr("y", d => d.y)
-    })
+    // Tick já está configurado acima na simulação
 
     // Drag behavior
     node.call(d3.drag()
@@ -343,7 +465,10 @@ export default function NetworkVisualization() {
       .on("end", dragended))
 
     function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart()
+      if (!event.active) {
+        simulation.alphaTarget(0.1).restart() // Reiniciar suavemente
+        console.log("🔄 Simulação reiniciada por interação");
+      }
       d.fx = d.x
       d.fy = d.y
     }
@@ -354,10 +479,23 @@ export default function NetworkVisualization() {
     }
 
     function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0)
+      if (!event.active) {
+        simulation.alphaTarget(0) // Parar gradualmente
+        // Parar simulação após um tempo se não houver mais interação
+        setTimeout(() => {
+          if (simulation.alpha() < 0.01) {
+            simulation.stop();
+            console.log("🛑 Simulação parada após interação");
+          }
+        }, 2000);
+      }
       d.fx = null
       d.fy = null
     }
+    
+    // Marcar grafo como inicializado
+    setGraphInitialized(true)
+    console.log('✅ Grafo inicializado com sucesso');
   }
 
   const getNodeColor = (node) => {
@@ -369,8 +507,8 @@ export default function NetworkVisualization() {
       return "#EF4444" // Vermelho (muito baixa credibilidade)
     } else {
       // Para notícias, usar baseado em confiança
-      const confidence = node.confidence || 0.5
-      if (node.isFakeNews) {
+      const confidence = node.credibility || node.confidence || 0.5
+      if (node.isFake || node.isFakeNews) {
         // Fake news - cores baseadas na confiança da detecção
         if (confidence >= 0.8) return "#EF4444" // Vermelho (fake news detectada com alta confiança)
         if (confidence >= 0.6) return "#F59E0B" // Amarelo (fake news detectada com média confiança)
@@ -401,6 +539,17 @@ export default function NetworkVisualization() {
   }
 
   const currentGraphData = activeGraph === 'sources' ? sourcesGraphData : newsGraphData
+  
+  // Debug dos dados
+  console.log(`🔍 Debug - Grafo ${activeGraph}:`, {
+    totalNodes: currentGraphData.nodes.length,
+    nodes: currentGraphData.nodes.map(n => ({
+      name: n.name || n.title,
+      credibility: n.credibility,
+      isFakeNews: n.isFakeNews,
+      type: n.type
+    }))
+  })
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -414,7 +563,10 @@ export default function NetworkVisualization() {
       <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
           <button
-            onClick={() => setActiveGraph('sources')}
+            onClick={() => {
+              setActiveGraph('sources');
+              setSelectedNode(null); // Limpar nó selecionado
+            }}
             className={`flex items-center justify-center px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${activeGraph === 'sources'
               ? 'bg-blue-100 text-blue-700 border border-blue-200'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -424,7 +576,10 @@ export default function NetworkVisualization() {
             Grafo de Fontes
           </button>
           <button
-            onClick={() => setActiveGraph('news')}
+            onClick={() => {
+              setActiveGraph('news');
+              setSelectedNode(null); // Limpar nó selecionado
+            }}
             className={`flex items-center justify-center px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${activeGraph === 'news'
               ? 'bg-green-100 text-green-700 border border-green-200'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -480,16 +635,17 @@ export default function NetworkVisualization() {
               <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
                 {(() => {
                   if (currentGraphData.nodes.length === 0) return "0%";
+                  
                   const validNodes = currentGraphData.nodes.filter(node => {
-                    const credibility = activeGraph === 'sources' ? (node.credibility || node.peso) : (node.confidence);
-                    return credibility !== null && credibility !== undefined && !isNaN(credibility);
+                    const credibility = activeGraph === 'sources' ? (node.credibility || node.peso) : (node.credibility || node.confidence);
+                    return credibility !== null && credibility !== undefined && !isNaN(parseFloat(credibility));
                   });
 
                   if (validNodes.length === 0) return "0%";
 
                   const avg = validNodes.reduce((acc, node) => {
-                    const credibility = activeGraph === 'sources' ? (node.credibility || node.peso || 0.5) : (node.confidence || 0.5);
-                    return acc + credibility;
+                    const credibility = activeGraph === 'sources' ? (node.credibility || node.peso || 0.5) : (node.credibility || node.confidence || 0.5);
+                    return acc + parseFloat(credibility);
                   }, 0) / validNodes.length;
 
                   return `${(avg * 100).toFixed(1)}%`;
@@ -606,10 +762,6 @@ export default function NetworkVisualization() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{selectedNode.name}</h4>
-                  <p className="text-xs sm:text-sm text-gray-500 flex items-center">
-                    <span className="mr-1">{getTypeIcon(selectedNode)}</span>
-                    {activeGraph === 'sources' ? selectedNode.type : (selectedNode.isFakeNews ? 'Fake news' : 'Notícia Confiável')}
-                  </p>
                 </div>
               </div>
 
@@ -623,17 +775,49 @@ export default function NetworkVisualization() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-xs sm:text-sm text-gray-600">Site:</span>
-                      <span className="text-xs sm:text-sm font-medium text-blue-600 truncate ml-2">
-                        {selectedNode.site || 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-xs sm:text-sm text-gray-600">Conexões:</span>
                       <span className="text-xs sm:text-sm font-medium">
-                        {currentGraphData.links.filter(
-                          (link) => link.source.id === selectedNode.id || link.target.id === selectedNode.id,
-                        ).length}
+                        {(() => {
+                          const connections = currentGraphData.links.filter((link) => {
+                            // Verificar se é objeto D3 ou string/ID
+                            let sourceId, targetId;
+                            
+                            if (typeof link.source === 'object' && link.source !== null) {
+                              sourceId = link.source.id;
+                            } else {
+                              sourceId = link.source;
+                            }
+                            
+                            if (typeof link.target === 'object' && link.target !== null) {
+                              targetId = link.target.id;
+                            } else {
+                              targetId = link.target;
+                            }
+                            
+                            // Comparar tanto por ID quanto por nome (fallback)
+                            const isSourceMatch = sourceId === selectedNode.id || 
+                                                 (typeof link.source === 'object' && link.source.name === selectedNode.name);
+                            const isTargetMatch = targetId === selectedNode.id || 
+                                                (typeof link.target === 'object' && link.target.name === selectedNode.name);
+                            
+                            return isSourceMatch || isTargetMatch;
+                          });
+                          
+                          console.log('🔗 Debug conexões:', {
+                            selectedNodeId: selectedNode.id,
+                            selectedNodeName: selectedNode.name,
+                            totalLinks: currentGraphData.links.length,
+                            connections: connections.length,
+                            allLinks: currentGraphData.links.map(link => ({
+                              source: typeof link.source === 'object' ? link.source.id : link.source,
+                              target: typeof link.target === 'object' ? link.target.id : link.target,
+                              sourceName: typeof link.source === 'object' ? link.source.name : 'N/A',
+                              targetName: typeof link.target === 'object' ? link.target.name : 'N/A'
+                            }))
+                          });
+                          
+                          return connections.length;
+                        })()}
                       </span>
                     </div>
                   </>
@@ -649,7 +833,11 @@ export default function NetworkVisualization() {
                     <div className="flex justify-between">
                       <span className="text-xs sm:text-sm text-gray-600">Nível de Risco:</span>
                       <span className="text-xs sm:text-sm font-medium">
-                        {selectedNode.riskLevel ? selectedNode.riskLevel.charAt(0).toUpperCase() + selectedNode.riskLevel.slice(1).toLowerCase() : 'N/A'}
+                        {selectedNode.riskLevel ? 
+                          (selectedNode.riskLevel === 'high' || selectedNode.riskLevel === 'alto' ? 'Alto Risco' :
+                           selectedNode.riskLevel === 'medium' || selectedNode.riskLevel === 'médio' ? 'Médio Risco' :
+                           selectedNode.riskLevel === 'low' || selectedNode.riskLevel === 'baixo' ? 'Baixo Risco' :
+                           selectedNode.riskLevel) : 'N/A'}
                       </span>
                     </div>
                     {selectedNode.content && (
@@ -681,14 +869,19 @@ export default function NetworkVisualization() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="text-center">
             <div className="text-xl sm:text-2xl font-bold text-green-600">
-              {currentGraphData.nodes.filter((n) => {
-                if (activeGraph === 'sources') {
-                  const credibility = n.credibility || n.peso || 0.5;
-                  return credibility >= 0.6;
-                } else {
-                  return !n.isFakeNews;
-                }
-              }).length}
+              {(() => {
+                const filteredNodes = currentGraphData.nodes.filter((n) => {
+                  if (activeGraph === 'sources') {
+                    const credibility = n.credibility || n.peso || 0.5;
+                    return credibility >= 0.6;
+                  } else {
+                    // Para notícias, verificar se isFakeNews é false ou undefined
+                    return n.isFakeNews === false || n.isFakeNews === undefined;
+                  }
+                });
+                console.log(`📊 ${activeGraph === 'sources' ? 'Fontes' : 'Notícias'} Confiáveis:`, filteredNodes.length, 'de', currentGraphData.nodes.length);
+                return filteredNodes.length;
+              })()}
             </div>
             <div className="text-xs sm:text-sm text-gray-600">
               {activeGraph === 'sources' ? 'Fontes Confiáveis' : 'Notícias Confiáveis'}
@@ -697,14 +890,19 @@ export default function NetworkVisualization() {
 
           <div className="text-center">
             <div className="text-xl sm:text-2xl font-bold text-red-600">
-              {currentGraphData.nodes.filter((n) => {
-                if (activeGraph === 'sources') {
-                  const credibility = n.credibility || n.peso || 0.5;
-                  return credibility < 0.6;
-                } else {
-                  return n.isFakeNews;
-                }
-              }).length}
+              {(() => {
+                const filteredNodes = currentGraphData.nodes.filter((n) => {
+                  if (activeGraph === 'sources') {
+                    const credibility = n.credibility || n.peso || 0.5;
+                    return credibility < 0.6;
+                  } else {
+                    // Para notícias, verificar se isFakeNews é true
+                    return n.isFakeNews === true;
+                  }
+                });
+                console.log(`📊 ${activeGraph === 'sources' ? 'Fontes' : 'Notícias'} Não Confiáveis:`, filteredNodes.length, 'de', currentGraphData.nodes.length);
+                return filteredNodes.length;
+              })()}
             </div>
             <div className="text-xs sm:text-sm text-gray-600">
               {activeGraph === 'sources' ? 'Fontes Não Confiáveis' : 'Fake news Detectadas'}

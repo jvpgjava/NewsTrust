@@ -14,11 +14,13 @@ const NewsAnalysis = () => {
     title: '',
     content: ''
   })
+  const [contentValidationError, setContentValidationError] = useState(false)
 
   // Estados para análise de fonte
   const [sourceData, setSourceData] = useState({
     url: ''
   })
+  const [sourceValidationError, setSourceValidationError] = useState(false)
 
   // Estados para upload de arquivo
   const [uploadedFile, setUploadedFile] = useState(null)
@@ -91,6 +93,18 @@ const NewsAnalysis = () => {
 
   const handleContentSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validar se há conteúdo para analisar (arquivo ou campos preenchidos)
+    const hasFile = uploadedFile
+    const hasContent = contentData.title.trim() && contentData.content.trim()
+    
+    if (!hasFile && !hasContent) {
+      setContentValidationError(true)
+      toast.error('É necessário preencher os campos ou anexar um arquivo para análise')
+      return
+    }
+    
+    setContentValidationError(false)
     setLoading(true)
 
     try {
@@ -108,9 +122,10 @@ const NewsAnalysis = () => {
         })
       } else {
         // Análise de conteúdo manual
-        response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/.netlify/functions/content-analysis`, contentData)
+        response = await axios.post('http://localhost:3001/api/content-analysis', contentData)
       }
       
+      console.log('📊 Dados recebidos da análise:', response.data)
       setContentResult(response.data)
       toast.success('Análise de conteúdo concluída!')
     } catch (error) {
@@ -123,10 +138,19 @@ const NewsAnalysis = () => {
 
   const handleSourceSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validar se o campo URL está preenchido
+    if (!sourceData.url.trim()) {
+      setSourceValidationError(true)
+      toast.error('É necessário preencher esse campo para realizar uma análise')
+      return
+    }
+    
+    setSourceValidationError(false)
     setLoading(true)
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/.netlify/functions/source-analysis`, sourceData)
+      const response = await axios.post('http://localhost:3001/api/source-analysis', sourceData)
       setSourceResult(response.data)
       toast.success('Análise de fonte concluída!')
     } catch (error) {
@@ -140,6 +164,7 @@ const NewsAnalysis = () => {
   const clearContentForm = () => {
     setContentData({ title: '', content: '' })
     setContentResult(null)
+    setContentValidationError(false)
     removeFile()
     toast.success('Formulário de conteúdo limpo!')
   }
@@ -147,6 +172,7 @@ const NewsAnalysis = () => {
   const clearSourceForm = () => {
     setSourceData({ url: '' })
     setSourceResult(null)
+    setSourceValidationError(false)
     toast.success('Formulário de fonte limpo!')
   }
 
@@ -328,7 +354,7 @@ const NewsAnalysis = () => {
                       <Search className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-blue-600" />
                       Análise de Conteúdo
                     </h3>
-                    <form onSubmit={handleContentSubmit} className="space-y-4 sm:space-y-6">
+                    <form onSubmit={handleContentSubmit} className="space-y-4 sm:space-y-6" noValidate>
                       {/* Seção de Upload de Arquivo */}
                       <div className="bg-white p-4 sm:p-6 rounded-xl border border-blue-200">
                         <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
@@ -337,11 +363,22 @@ const NewsAnalysis = () => {
                         </h4>
                         
                         {!uploadedFile ? (
-                          <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 sm:p-6 lg:p-8 text-center hover:border-blue-400 transition-colors">
+                          <div 
+                            className="border-2 border-dashed border-blue-300 rounded-lg p-4 sm:p-6 lg:p-8 text-center hover:border-blue-400 transition-colors"
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              const files = e.dataTransfer.files
+                              if (files.length > 0) {
+                                handleFileUpload(files[0])
+                              }
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDragEnter={(e) => e.preventDefault()}
+                          >
                             <input
                               ref={fileInputRef}
                               type="file"
-                              accept=".pdf,.txt,.docx"
+                              accept=".pdf,.txt,.docx,.jpg,.jpeg,.png,.gif,.bmp,.webp,.tiff"
                               onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0])}
                               className="hidden"
                             />
@@ -395,10 +432,19 @@ const NewsAnalysis = () => {
                         <input
                           type="text"
                           value={contentData.title}
-                          onChange={(e) => setContentData({ ...contentData, title: e.target.value })}
-                          className="w-full px-3 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base lg:text-lg"
+                          onChange={(e) => {
+                            setContentData({ ...contentData, title: e.target.value })
+                            // Limpar erro quando usuário começar a digitar
+                            if (contentValidationError) {
+                              setContentValidationError(false)
+                            }
+                          }}
+                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 text-sm sm:text-base lg:text-lg ${
+                            contentValidationError 
+                              ? 'border-red-500 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
                           placeholder="Digite o título do conteúdo"
-                          required
                         />
                       </div>
                       <div>
@@ -407,12 +453,26 @@ const NewsAnalysis = () => {
                         </label>
                         <textarea
                           value={contentData.content}
-                          onChange={(e) => setContentData({ ...contentData, content: e.target.value })}
+                          onChange={(e) => {
+                            setContentData({ ...contentData, content: e.target.value })
+                            // Limpar erro quando usuário começar a digitar
+                            if (contentValidationError) {
+                              setContentValidationError(false)
+                            }
+                          }}
                           rows="6"
-                          className="w-full px-3 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-y text-sm sm:text-base lg:text-lg"
+                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 resize-y text-sm sm:text-base lg:text-lg ${
+                            contentValidationError 
+                              ? 'border-red-500 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
                           placeholder={uploadedFile ? "Conteúdo será extraído automaticamente do arquivo (PDF/DOCX) ou análise de imagem..." : "Descreva aqui o conteúdo encontrado..."}
-                          required={!uploadedFile}
                         ></textarea>
+                        {contentValidationError && (
+                          <p className="text-red-500 text-sm mt-1 font-medium">
+                            É necessário preencher os campos ou anexar um arquivo para análise
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                       <button
@@ -458,12 +518,12 @@ const NewsAnalysis = () => {
 
                           <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                             <div className="space-y-3 sm:space-y-4">
-                              <div className={`p-4 sm:p-6 rounded-xl border ${getConfidenceBgColor(contentResult.credibility)}`}>
-                                <span className={`text-xs sm:text-sm font-medium ${getConfidenceTextColor(contentResult.credibility)}`}>Credibilidade</span>
+                              <div className={`p-4 sm:p-6 rounded-xl border ${getConfidenceBgColor(contentResult.confidence)}`}>
+                                <span className={`text-xs sm:text-sm font-medium ${getConfidenceTextColor(contentResult.confidence)}`}>Credibilidade</span>
                                 <div className="flex items-center mt-2 sm:mt-3">
-                                  {getConfidenceIcon(contentResult.credibility)}
-                                  <p className={`text-2xl sm:text-3xl font-bold ml-2 sm:ml-3 ${getConfidenceColor(contentResult.credibility)}`}>
-                                    {contentResult.credibility && !isNaN(contentResult.credibility) ? Math.round(contentResult.credibility) : 0}%
+                                  {getConfidenceIcon(contentResult.confidence)}
+                                  <p className={`text-2xl sm:text-3xl font-bold ml-2 sm:ml-3 ${getConfidenceColor(contentResult.confidence)}`}>
+                                    {contentResult.confidence && !isNaN(contentResult.confidence) ? Math.round(contentResult.confidence * 100) : 0}%
                                   </p>
                                 </div>
                             </div>
@@ -513,14 +573,14 @@ const NewsAnalysis = () => {
                                 <div className="mt-2 sm:mt-3">
                                   <div className="mb-2">
                                     <span className="text-base sm:text-lg font-bold text-gray-900">
-                                      {contentResult.analysis?.riskLevel ? contentResult.analysis.riskLevel.toUpperCase() : 'N/A'}
+                                      {contentResult.riskLevel ? contentResult.riskLevel.toUpperCase() : 'N/A'}
                                     </span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
                                     <div
-                                      className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(contentResult.analysis?.riskLevel)}`}
+                                      className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${getRiskLevelBarColor(contentResult.riskLevel)}`}
                                     style={{
-                                        width: getRiskLevelBarWidth(contentResult.analysis?.riskLevel)
+                                        width: getRiskLevelBarWidth(contentResult.riskLevel)
                                     }}
                                   ></div>
                                 </div>
@@ -534,8 +594,8 @@ const NewsAnalysis = () => {
                               Razões
                             </h4>
                               <ul className="list-disc list-inside text-xs sm:text-sm space-y-1">
-                              {Array.isArray(contentResult.analysis?.riskFactors) ? contentResult.analysis.riskFactors.map((factor, index) => (
-                                <li key={index}>{factor.description || factor.factor}</li>
+                              {Array.isArray(contentResult.reasons) ? contentResult.reasons.map((reason, index) => (
+                                <li key={index}>{reason}</li>
                               )) : (
                                 <li>Análise concluída</li>
                               )}
@@ -548,7 +608,7 @@ const NewsAnalysis = () => {
                               Recomendações
                             </h4>
                               <ul className="list-disc list-inside text-xs sm:text-sm space-y-1">
-                              {Array.isArray(contentResult.analysis?.recommendations) ? contentResult.analysis.recommendations.map((rec, index) => (
+                              {Array.isArray(contentResult.recommendations) ? contentResult.recommendations.map((rec, index) => (
                                 <li key={index}>{rec}</li>
                               )) : (
                                 <li>Verificar fontes confiáveis</li>
@@ -562,7 +622,7 @@ const NewsAnalysis = () => {
                               Análise Detalhada
                             </h4>
                               <p className="text-xs sm:text-sm text-gray-700">
-                              Análise na Web + IA - Resultados: {contentResult.analysis?.keywords?.length || 0}
+                              {contentResult.detailedAnalysis || 'Análise na Web + IA - Resultados: 0'}
                             </p>
                             </div>
                           </div>
@@ -581,7 +641,7 @@ const NewsAnalysis = () => {
                       <Globe className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-blue-600" />
                       Análise de Fonte
                     </h3>
-                    <form onSubmit={handleSourceSubmit} className="space-y-4 sm:space-y-6">
+                    <form onSubmit={handleSourceSubmit} className="space-y-4 sm:space-y-6" noValidate>
                       <div>
                         <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
                           URL da Fonte
@@ -589,11 +649,25 @@ const NewsAnalysis = () => {
                         <input
                           type="url"
                           value={sourceData.url}
-                          onChange={(e) => setSourceData({ ...sourceData, url: e.target.value })}
-                          className="w-full px-3 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base lg:text-lg"
+                          onChange={(e) => {
+                            setSourceData({ ...sourceData, url: e.target.value })
+                            // Limpar erro quando usuário começar a digitar
+                            if (sourceValidationError) {
+                              setSourceValidationError(false)
+                            }
+                          }}
+                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 text-sm sm:text-base lg:text-lg ${
+                            sourceValidationError 
+                              ? 'border-red-500 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
                           placeholder="https://exemplo.com"
-                          required
                         />
+                        {sourceValidationError && (
+                          <p className="text-red-500 text-sm mt-1 font-medium">
+                            É necessário preencher esse campo para realizar uma análise
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                       <button
