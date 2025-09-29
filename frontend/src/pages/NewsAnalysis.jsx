@@ -729,7 +729,7 @@ const NewsAnalysis = () => {
                                 <div className="flex items-center mt-2 sm:mt-3">
                                   {getConfidenceIcon(sourceResult.credibility)}
                                   <p className={`text-2xl sm:text-3xl font-bold ml-2 sm:ml-3 ${getConfidenceColor(sourceResult.credibility)}`}>
-                                    {Math.round(sourceResult.credibility * 100)}%
+                                    {sourceResult.credibility ? Math.round(sourceResult.credibility * 100) : 0}%
                                   </p>
                                 </div>
                               </div>
