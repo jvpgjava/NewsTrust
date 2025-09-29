@@ -26,6 +26,7 @@ import systemRouter from './routes/system.js';
 import fileUploadRoutes from './routes/file-upload.js';
 import contactRoutes from './routes/contact.js';
 import notificationsRoutes from './routes/notifications-simple.js';
+import testDbRoutes from './routes/test-db.js';
 
 // Configuração do dotenv
 dotenv.config();
@@ -103,8 +104,16 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://newstrust.me', 'https://api.newstrust.me', 'http://localhost:3001'],
-  credentials: true
+  origin: [
+    'http://localhost:3000', 
+    'https://newstrust.me', 
+    'https://www.newstrust.me',
+    'https://api.newstrust.me', 
+    'http://localhost:3001'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(compression());
 app.use(morgan('combined'));
@@ -160,6 +169,7 @@ app.use('/api/system', systemRouter);
 app.use('/api/file-upload', fileUploadRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/test-db', testDbRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
