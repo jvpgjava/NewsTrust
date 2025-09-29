@@ -64,7 +64,6 @@ export default function NetworkVisualization() {
       console.log('🔄 Atualização recebida:', data);
       
       if (data.network) {
-        // Atualizar dados do grafo
         setSourcesGraphData({
           nodes: data.network.sources?.nodes || [],
           links: data.network.sources?.connections || []
@@ -86,44 +85,7 @@ export default function NetworkVisualization() {
         });
       }
     };
-          },
-          news: {
-            nodes: data.network.news?.nodes?.length || 0,
-            connections: data.network.news?.connections?.length || 0
-          }
-        });
-      }
 
-      setLoading(false);
-    };
-
-    // Listener para atualizações
-    const handleUpdate = (data) => {
-      console.log('🔄 Atualização recebida:', data);
-
-      // Atualizar dados dos grafos
-      if (data.network) {
-        setSourcesGraphData({
-          nodes: data.network.sources?.nodes || [],
-          links: data.network.sources?.connections || []
-        });
-        setNewsGraphData({
-          nodes: data.network.news?.nodes || [],
-          links: data.network.news?.connections || []
-        });
-
-        console.log('📊 Grafos atualizados:', {
-          sources: {
-            nodes: data.network.sources?.nodes?.length || 0,
-            connections: data.network.sources?.connections?.length || 0
-          },
-          news: {
-            nodes: data.network.news?.nodes?.length || 0,
-            connections: data.network.news?.connections?.length || 0
-          }
-        });
-      }
-    };
 
     // Adicionar listeners
     pollingService.addListener('initial_data', handleInitialData);
