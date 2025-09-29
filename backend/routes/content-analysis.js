@@ -1,11 +1,13 @@
 import express from 'express'
 import Joi from 'joi'
 import AIFactChecker from '../services/AIFactChecker.js'
+import SupabaseAPI from '../services/SupabaseAPI.js'
 import { query } from '../config/database.js'
 import realTimeService from '../services/RealTimeService.js'
 
 const router = express.Router()
 const factChecker = new AIFactChecker()
+const supabaseAPI = new SupabaseAPI()
 
 // Schema de validação para análise de conteúdo
 const contentAnalysisSchema = Joi.object({
