@@ -21,6 +21,10 @@ router.get('/check', async (req, res) => {
             recent: recentAnalyses.length
         });
 
+        // DEBUG: Verificar se há dados reais
+        console.log('🔍 DEBUG - recentAnalyses:', recentAnalyses);
+        console.log('🔍 DEBUG - counts:', counts);
+
         // Dados da rede (simplificado) - DECLARAR PRIMEIRO
         const networkData = {
             sources: {
@@ -60,7 +64,7 @@ router.get('/check', async (req, res) => {
 
         // Dados do dashboard - AGORA PODE USAR networkData
         const dashboardData = {
-            sourcesCount: 13, // Valor fixo por enquanto
+            sourcesCount: 0, // Começar com 0 - será calculado dinamicamente
             newsCount: counts.total,
             fakeNewsCount: counts.fake,
             averageCredibility: recentAnalyses.length > 0 ? 
@@ -81,6 +85,15 @@ router.get('/check', async (req, res) => {
             trendData: [], // Por enquanto vazio
             connectionsCount: networkData.news.connections.length
         };
+
+        // DEBUG: Verificar dados finais
+        console.log('🔍 DEBUG - dashboardData:', {
+            sourcesCount: dashboardData.sourcesCount,
+            newsCount: dashboardData.newsCount,
+            fakeNewsCount: dashboardData.fakeNewsCount,
+            averageCredibility: dashboardData.averageCredibility,
+            connectionsCount: dashboardData.connectionsCount
+        });
 
         console.log('✅ Dados carregados via Supabase API:', {
             sources: dashboardData.sourcesCount,
