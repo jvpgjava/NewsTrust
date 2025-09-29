@@ -28,6 +28,7 @@ import contactRoutes from './routes/contact.js';
 import notificationsRoutes from './routes/notifications-simple.js';
 import testDbRoutes from './routes/test-db.js';
 import simpleTestRoutes from './routes/simple-test.js';
+import testWithoutDbRoutes from './routes/test-without-db.js';
 
 // Configuração do dotenv
 dotenv.config();
@@ -171,6 +172,8 @@ app.use('/api/file-upload', fileUploadRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/test-db', testDbRoutes);
+app.use('/api/simple-test', simpleTestRoutes);
+app.use('/api/test-without-db', testWithoutDbRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
