@@ -1,10 +1,9 @@
 {
-  "name": "newstrust-netlify",
+  "name": "newstrust",
   "version": "1.0.0",
-  "description": "NewsTrust Backend - Netlify Functions",
+  "description": "NewsTrust - Sistema de Detecção de Fake News",
   "main": "index.html",
   "dependencies": {
-    "@netlify/functions": "^2.0.0",
     "pg": "^8.11.3",
     "nodemailer": "^6.9.7"
   },
