@@ -9,12 +9,30 @@ class SupabaseAPI {
         console.log('🔗 SupabaseAPI inicializado');
         console.log('URL:', this.url);
         console.log('API Key configurada:', !!this.apiKey);
+        console.log('Service Key configurada:', !!this.serviceKey);
+        console.log('API Key (primeiros 10 chars):', this.apiKey?.substring(0, 10));
+        console.log('Service Key (primeiros 10 chars):', this.serviceKey?.substring(0, 10));
     }
 
     // Salvar análise de conteúdo
     async saveContentAnalysis(analysisData) {
         try {
             console.log('💾 Salvando análise via Supabase API...');
+            
+            const payload = {
+                title: analysisData.title,
+                content: analysisData.content,
+                confidence: analysisData.confidence,
+                risk_level: analysisData.riskLevel,
+                is_fake_news: analysisData.isFakeNews,
+                reasons: JSON.stringify(analysisData.reasons),
+                recommendations: JSON.stringify(analysisData.recommendations),
+                detailed_analysis: analysisData.detailedAnalysis,
+                source: analysisData.source || 'Groq'
+            };
+            
+            console.log('🔍 Payload para Supabase:', payload);
+            console.log('🔍 URL completa:', `${this.url}/rest/v1/analises_conteudo`);
             
             const response = await fetch(`${this.url}/rest/v1/analises_conteudo`, {
                 method: 'POST',
@@ -24,17 +42,7 @@ class SupabaseAPI {
                     'apikey': this.apiKey,
                     'Prefer': 'return=minimal'
                 },
-                body: JSON.stringify({
-                    title: analysisData.title,
-                    content: analysisData.content,
-                    confidence: analysisData.confidence,
-                    risk_level: analysisData.riskLevel,
-                    is_fake_news: analysisData.isFakeNews,
-                    reasons: JSON.stringify(analysisData.reasons),
-                    recommendations: JSON.stringify(analysisData.recommendations),
-                    detailed_analysis: analysisData.detailedAnalysis,
-                    source: analysisData.source || 'Groq'
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
