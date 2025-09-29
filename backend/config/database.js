@@ -23,7 +23,12 @@ console.log('DB_NAME:', process.env.DB_NAME);
 // ✅ USAR SUPABASE EM PRODUÇÃO
 if (process.env.NODE_ENV === 'production') {
   console.log('✅ Usando Supabase em produção');
-  // Manter DATABASE_URL do Supabase
+  // Forçar uso da DATABASE_URL em produção
+  if (process.env.DATABASE_URL) {
+    console.log('✅ DATABASE_URL encontrada, usando para conexão');
+  } else {
+    console.log('❌ DATABASE_URL não encontrada em produção!');
+  }
 }
 
 // Configuração da pool de conexões
