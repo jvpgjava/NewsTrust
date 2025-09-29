@@ -27,6 +27,7 @@ import fileUploadRoutes from './routes/file-upload.js';
 import contactRoutes from './routes/contact.js';
 import notificationsRoutes from './routes/notifications-simple.js';
 import testDbRoutes from './routes/test-db.js';
+import simpleTestRoutes from './routes/simple-test.js';
 
 // Configuração do dotenv
 dotenv.config();
