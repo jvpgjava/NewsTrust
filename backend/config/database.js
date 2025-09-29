@@ -37,10 +37,11 @@ if (process.env.DATABASE_URL) {
     connectionString: process.env.DATABASE_URL,
     max: 20, // máximo de conexões na pool
     idleTimeoutMillis: 30000, // tempo limite de inatividade
-    connectionTimeoutMillis: 10000, // aumento tempo limite para Railway
-    // SSL obrigatório para Railway em produção
+    connectionTimeoutMillis: 10000, // aumento tempo limite para Supabase
+    // SSL obrigatório para Supabase em produção
     ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      require: true
     } : false,
   };
   console.log('🔧 Configuração da pool:', {
