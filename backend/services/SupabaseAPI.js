@@ -3,8 +3,8 @@ import fetch from 'node-fetch';
 class SupabaseAPI {
     constructor() {
         this.url = process.env.SUPABASE_URL || 'https://wbbxqslgutfxldmyuekb.supabase.co';
-        this.apiKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_87nAXikdyxSnlidI9ybD8g_GB79tsNX';
-        this.serviceKey = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_y9EP8_t7JHNGbdaRAHdRzA_zY4AsKZD';
+        this.apiKey = process.env.SUPABASE_ANON_KEY || 'COLE_AQUI_A_CHAVE_ANON_REAL';
+        this.serviceKey = process.env.SUPABASE_SERVICE_KEY || 'COLE_AQUI_A_CHAVE_SERVICE_REAL';
         
         console.log('🔗 SupabaseAPI inicializado');
         console.log('URL:', this.url);
