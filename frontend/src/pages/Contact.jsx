@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { config } from '../config/env.js';
 
 const Contact = () => {
   const [contactData, setContactData] = useState({
@@ -109,7 +110,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      await axios.post('http://localhost:3001/api/contact', contactData);
+      await axios.post(`${config.API_URL}/api/contact`, contactData);
       setShowSuccessModal(true);
       setContactData({ name: '', email: '', message: '' });
       setValidationErrors({ name: false, email: false, message: false });

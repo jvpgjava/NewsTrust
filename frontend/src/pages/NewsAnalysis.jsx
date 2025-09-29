@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import { Brain, Globe, CheckCircle, AlertTriangle, Clock, TrendingUp, Shield, Target, Search, Upload, FileText, X, Trash2 } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { config } from '../config/env.js'
 
 const NewsAnalysis = () => {
   const [activeTab, setActiveTab] = useState('content')
@@ -115,14 +116,14 @@ const NewsAnalysis = () => {
         const formData = new FormData()
         formData.append('file', uploadedFile)
         
-        response = await axios.post('http://localhost:3001/api/file-upload/analyze-file', formData, {
+        response = await axios.post(`${config.API_URL}/api/file-upload/analyze-file`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         })
       } else {
         // Análise de conteúdo manual
-        response = await axios.post('http://localhost:3001/api/content-analysis', contentData)
+        response = await axios.post(`${config.API_URL}/api/content-analysis`, contentData)
       }
       
       console.log('📊 Dados recebidos da análise:', response.data)
@@ -150,7 +151,7 @@ const NewsAnalysis = () => {
     setLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:3001/api/source-analysis', sourceData)
+      const response = await axios.post(`${config.API_URL}/api/source-analysis`, sourceData)
       setSourceResult(response.data)
       toast.success('Análise de fonte concluída!')
     } catch (error) {
