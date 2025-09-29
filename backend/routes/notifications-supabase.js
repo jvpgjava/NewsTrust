@@ -24,6 +24,12 @@ router.get('/check', async (req, res) => {
         // DEBUG: Verificar se há dados reais
         console.log('🔍 DEBUG - recentAnalyses:', recentAnalyses);
         console.log('🔍 DEBUG - counts:', counts);
+        
+        // DEBUG: Verificar se as tabelas têm dados
+        if (recentAnalyses.length === 0) {
+            console.log('⚠️ AVISO: Nenhuma análise encontrada no Supabase!');
+            console.log('🔍 Verificando se a tabela analises_conteudo tem dados...');
+        }
 
         // Dados da rede (simplificado) - DECLARAR PRIMEIRO
         const networkData = {
