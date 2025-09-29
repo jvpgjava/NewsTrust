@@ -94,9 +94,16 @@ router.post('/', async (req, res) => {
 
         // 💾 Salvar via Supabase API
         console.log('💾 Salvando análise via Supabase API...');
+        console.log('🔍 DEBUG - Dados para salvar:', {
+            title,
+            content: content.substring(0, 100) + '...',
+            confidence: analysis.confidence,
+            riskLevel: analysis.riskLevel,
+            isFakeNews: analysis.isFakeNews
+        });
         
         try {
-            await supabaseAPI.saveContentAnalysis({
+            const saveResult = await supabaseAPI.saveContentAnalysis({
                 title,
                 content,
                 confidence: analysis.confidence,
@@ -108,9 +115,11 @@ router.post('/', async (req, res) => {
                 source: analysis.aiAnalysis?.source || 'Groq'
             });
 
-            console.log('✅ Análise salva com sucesso via Supabase API');
+            console.log('✅ Análise salva com sucesso via Supabase API:', saveResult);
         } catch (apiError) {
-            console.error('⚠️ Erro ao salvar via Supabase API, continuando sem salvar:', apiError.message);
+            console.error('❌ ERRO ao salvar análise via Supabase API:', apiError);
+            console.error('❌ Detalhes do erro:', apiError.message);
+            console.error('❌ Stack trace:', apiError.stack);
             // Continuar mesmo se não conseguir salvar
         }
 
