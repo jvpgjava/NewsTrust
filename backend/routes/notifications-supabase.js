@@ -14,6 +14,12 @@ router.get('/check', async (req, res) => {
         
         // Contar análises via Supabase API
         const counts = await supabaseAPI.getAnalysisCounts();
+        
+        console.log('📊 Dados do Supabase:', {
+            total: counts.total,
+            fake: counts.fake,
+            recent: recentAnalyses.length
+        });
 
         // Dados do dashboard
         const dashboardData = {
