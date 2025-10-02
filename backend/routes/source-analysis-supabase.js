@@ -1,10 +1,10 @@
 import express from 'express'
 import Joi from 'joi'
-import AIFactChecker from '../services/AIFactChecker.js'
+import ExternalSourceAnalyzer from '../services/ExternalSourceAnalyzer.js'
 import SupabaseAPI from '../services/SupabaseAPI.js'
 
 const router = express.Router()
-const factChecker = new AIFactChecker()
+const sourceAnalyzer = new ExternalSourceAnalyzer()
 const supabaseAPI = new SupabaseAPI()
 
 // Schema de validação para análise de fonte
@@ -63,9 +63,7 @@ const sourceAnalysisSchema = Joi.object({
  */
 router.post('/', async (req, res) => {
     try {
-        console.log('📝 Recebendo dados para análise de fonte:', {
-            url: req.body.url
-        });
+        console.log('🔍 Recebendo requisição de análise de fonte:', req.body);
 
         // Validar dados de entrada
         const { error, value } = sourceAnalysisSchema.validate(req.body)
@@ -78,49 +76,63 @@ router.post('/', async (req, res) => {
 
         const { url } = value
 
-        console.log('🤖 Iniciando análise de fonte com IA gratuita + busca na web...')
+        console.log('🔍 Iniciando análise de fonte com ScamAdviser:', url)
 
-        // Realizar análise com IA (usando URL como título e conteúdo)
-        const analysis = await factChecker.analyzeContent(url, `Análise da fonte: ${url}`)
+        // Extrair domínio da URL
+        const domain = sourceAnalyzer.extractDomain(url)
 
-        // 💾 Salvar via Supabase API
-        console.log('💾 Salvando análise de fonte via Supabase API...');
+        // Analisar fonte usando ScamAdviser
+        const analysis = await sourceAnalyzer.analyzeExternalSource(url, '', '')
+
+        console.log('📊 Resultado da análise ScamAdviser:', {
+            peso: analysis.peso,
+            tipo: analysis.tipo,
+            descricao: analysis.descricao
+        });
+
+        // Determinar nível de risco baseado na credibilidade
+        let riskLevel = 'baixo'
+        if (analysis.peso >= 0.7) {
+            riskLevel = 'baixo'
+        } else if (analysis.peso >= 0.4) {
+            riskLevel = 'medio'
+        } else {
+            riskLevel = 'alto'
+        }
+
+        // 💾 Salvar fonte via Supabase API
+        console.log('💾 Salvando fonte via Supabase API...');
         
         try {
-            await supabaseAPI.saveContentAnalysis({
-                title: `Análise de Fonte: ${url}`,
-                content: `URL analisada: ${url}`,
-                confidence: analysis.confidence,
-                riskLevel: analysis.riskLevel,
-                isFakeNews: analysis.isFakeNews,
-                reasons: analysis.reasons,
-                recommendations: analysis.recommendations,
-                detailedAnalysis: analysis.detailedAnalysis,
-                source: analysis.aiAnalysis?.source || 'Groq'
+            await supabaseAPI.saveSourceAnalysis({
+                nome: domain,
+                site: url,
+                peso: analysis.peso,
+                tipo: analysis.tipo || 'Site',
+                descricao: analysis.descricao || 'Fonte analisada automaticamente',
+                externalData: analysis.externalData || {}
             });
 
-            console.log('✅ Análise de fonte salva com sucesso via Supabase API');
+            console.log('✅ Fonte salva com sucesso via Supabase API');
         } catch (apiError) {
-            console.error('⚠️ Erro ao salvar análise de fonte via Supabase API, continuando sem salvar:', apiError.message);
+            console.error('⚠️ Erro ao salvar fonte via Supabase API:', apiError.message);
             // Continuar mesmo se não conseguir salvar
         }
 
-        // Retornar resultado
-        res.json({
-            success: true,
-            analysis: {
-                isFakeNews: analysis.isFakeNews,
-                confidence: analysis.confidence,
-                riskLevel: analysis.riskLevel,
-                reasons: analysis.reasons,
-                recommendations: analysis.recommendations,
-                detailedAnalysis: analysis.detailedAnalysis,
-                score: analysis.score,
-                webResults: analysis.webResults,
-                aiAnalysis: analysis.aiAnalysis,
-                searchCoverage: analysis.searchCoverage
-            }
-        })
+        // Retornar resultado no formato esperado pelo frontend
+        const response = {
+            domain: domain,
+            credibility: analysis.peso,
+            riskLevel: riskLevel,
+            sourceType: analysis.tipo || 'Site',
+            description: analysis.descricao || 'Fonte analisada automaticamente',
+            scamAdviserData: analysis.externalData?.scamAdviserData || {},
+            timestamp: new Date().toISOString()
+        }
+
+        console.log('✅ Resposta da análise de fonte:', response);
+
+        res.json(response)
 
     } catch (error) {
         console.error('❌ Erro na análise de fonte:', error)

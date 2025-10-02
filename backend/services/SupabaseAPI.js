@@ -127,6 +127,47 @@ class SupabaseAPI {
         }
     }
 
+    // Salvar análise de fonte
+    async saveSourceAnalysis(sourceData) {
+        try {
+            console.log('💾 Salvando fonte via Supabase API...');
+            
+            const payload = {
+                nome: sourceData.nome,
+                site: sourceData.site,
+                peso: sourceData.peso,
+                tipo: sourceData.tipo,
+                descricao: sourceData.descricao,
+                external_data: sourceData.externalData || {}
+            };
+            
+            console.log('🔍 Payload para Supabase (fontes):', payload);
+            
+            const response = await fetch(`${this.url}/rest/v1/fontes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.serviceKey}`,
+                    'apikey': this.apiKey,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Supabase API error: ${response.status} - ${errorText}`);
+            }
+
+            console.log('✅ Fonte salva com sucesso via Supabase API');
+            return { success: true };
+
+        } catch (error) {
+            console.error('❌ Erro ao salvar fonte via Supabase API:', error);
+            throw error;
+        }
+    }
+
     // Testar conexão
     async testConnection() {
         try {
