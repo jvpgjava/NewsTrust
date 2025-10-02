@@ -201,15 +201,15 @@ const About = () => {
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
           </div>
-          <div className="ml-4 w-full">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 text-center">Desenvolvido e Pensado Por</h2>
+          <div className="ml-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">Desenvolvido e Pensado Por</h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-center max-w-3xl mx-auto">
-              <div className="text-gray-700 font-medium">João Vitor Prestes Grando</div>
-              <div className="text-gray-700 font-medium">Évilyn Flores Francisco</div>
-              <div className="text-gray-700 font-medium">Guilherme Lima Sarmento</div>
-              <div className="text-gray-700 font-medium">Vinicius Martinez da Silva</div>
-              <div className="text-gray-700 font-medium sm:col-span-2">Rafael Ramos da Luz</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3 max-w-3xl">
+              <div className="text-gray-700">João Vitor Prestes Grando</div>
+              <div className="text-gray-700">Évilyn Flores Francisco</div>
+              <div className="text-gray-700">Guilherme Lima Sarmento</div>
+              <div className="text-gray-700">Vinicius Martinez da Silva</div>
+              <div className="text-gray-700 sm:col-span-2">Rafael Ramos da Luz</div>
             </div>
           </div>
         </div>
@@ -220,17 +220,14 @@ const About = () => {
         <div className="flex items-start">
           <div className="flex-shrink-0 -mt-1">
             <img 
-              src="/iconeOrientado.png" 
+              src="/iconeOrientadoPor.png" 
               alt="Orientado Por" 
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
           </div>
-          <div className="ml-4 w-full">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 text-center">Orientado Por</h2>
-            
-            <div className="text-center">
-              <div className="text-gray-700 font-medium text-lg">Arthur Marques de Oliveira</div>
-            </div>
+          <div className="ml-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">Orientado Por</h2>
+            <p className="text-gray-700">Arthur Marques de Oliveira</p>
           </div>
         </div>
       </div>
