@@ -202,46 +202,34 @@ const About = () => {
             />
           </div>
           <div className="ml-4 w-full">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Desenvolvido e Pensado Por</h2>
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              O NewsTrust é resultado do trabalho colaborativo de uma equipe dedicada a combater a desinformação 
-              e promover a verificação de notícias de forma acessível e eficaz.
-            </p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 text-center">Desenvolvido e Pensado Por</h2>
             
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-900 text-lg mb-3">Equipe de Desenvolvimento:</h3>
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-center">
-                  <span className="text-blue-600 mr-3 text-lg">•</span>
-                  <span>João Vitor Prestes Grando</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 mr-3 text-lg">•</span>
-                  <span>Évilyn Flores Francisco</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 mr-3 text-lg">•</span>
-                  <span>Guilherme Lima Sarmento</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 mr-3 text-lg">•</span>
-                  <span>Vinicius Martinez da Silva</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-600 mr-3 text-lg">•</span>
-                  <span>Rafael Ramos da Luz</span>
-                </li>
-              </ul>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-center max-w-3xl mx-auto">
+              <div className="text-gray-700 font-medium">João Vitor Prestes Grando</div>
+              <div className="text-gray-700 font-medium">Évilyn Flores Francisco</div>
+              <div className="text-gray-700 font-medium">Guilherme Lima Sarmento</div>
+              <div className="text-gray-700 font-medium">Vinicius Martinez da Silva</div>
+              <div className="text-gray-700 font-medium sm:col-span-2">Rafael Ramos da Luz</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="font-semibold text-gray-900 text-lg mb-3">Orientação:</h3>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-center">
-                    <span className="text-purple-600 mr-3 text-lg">•</span>
-                    <span>Arthur Marques de Oliveira <span className="text-sm text-purple-600 font-medium">(Professor Auxiliar)</span></span>
-                  </li>
-                </ul>
-              </div>
+      {/* Orientado Por */}
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 -mt-1">
+            <img 
+              src="/iconeOrientado.png" 
+              alt="Orientado Por" 
+              className="w-8 h-8 sm:w-10 sm:h-10"
+            />
+          </div>
+          <div className="ml-4 w-full">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 text-center">Orientado Por</h2>
+            
+            <div className="text-center">
+              <div className="text-gray-700 font-medium text-lg">Arthur Marques de Oliveira</div>
             </div>
           </div>
         </div>
