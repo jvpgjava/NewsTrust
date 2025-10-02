@@ -127,6 +127,61 @@ class SupabaseAPI {
         }
     }
 
+    // Buscar fontes recentes
+    async getRecentSources(limit = 10) {
+        try {
+            console.log('📊 Buscando fontes recentes via Supabase API...');
+            
+            const response = await fetch(`${this.url}/rest/v1/fontes?select=*&order=created_at.desc&limit=${limit}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.serviceKey}`,
+                    'apikey': this.apiKey,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Supabase API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(`✅ ${data.length} fontes encontradas via Supabase API`);
+            return data;
+
+        } catch (error) {
+            console.error('❌ Erro ao buscar fontes via Supabase API:', error);
+            return [];
+        }
+    }
+
+    // Contar fontes
+    async getSourceCounts() {
+        try {
+            console.log('📊 Contando fontes via Supabase API...');
+            
+            const response = await fetch(`${this.url}/rest/v1/fontes?select=id`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.serviceKey}`,
+                    'apikey': this.apiKey,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = response.ok ? await response.json() : [];
+            console.log(`📊 Total de fontes: ${data.length}`);
+
+            return {
+                total: Array.isArray(data) ? data.length : 0
+            };
+
+        } catch (error) {
+            console.error('❌ Erro ao contar fontes via Supabase API:', error);
+            return { total: 0 };
+        }
+    }
+
     // Salvar análise de fonte
     async saveSourceAnalysis(sourceData) {
         try {

@@ -15,26 +15,31 @@ router.get('/check', async (req, res) => {
         // Contar análises via Supabase API
         const counts = await supabaseAPI.getAnalysisCounts();
         
+        // Buscar fontes via Supabase API
+        const recentSources = await supabaseAPI.getRecentSources(10);
+        const sourceCounts = await supabaseAPI.getSourceCounts();
+        
         console.log('📊 Dados do Supabase:', {
             total: counts.total,
             fake: counts.fake,
-            recent: recentAnalyses.length
+            recent: recentAnalyses.length,
+            sources: sourceCounts.total,
+            recentSourcesCount: recentSources.length
         });
-
-        // DEBUG: Verificar se há dados reais
-        console.log('🔍 DEBUG - recentAnalyses:', recentAnalyses);
-        console.log('🔍 DEBUG - counts:', counts);
-        
-        // DEBUG: Verificar se as tabelas têm dados
-        if (recentAnalyses.length === 0) {
-            console.log('⚠️ AVISO: Nenhuma análise encontrada no Supabase!');
-            console.log('🔍 Verificando se a tabela analises_conteudo tem dados...');
-        }
 
         // Dados da rede (simplificado) - DECLARAR PRIMEIRO
         const networkData = {
             sources: {
-                nodes: [],
+                nodes: recentSources.map(source => ({
+                    id: source.id,
+                    name: source.nome,
+                    site: source.site,
+                    credibility: source.peso || 0.5,
+                    peso: source.peso || 0.5,
+                    type: 'source',
+                    sourceType: source.tipo || 'Site',
+                    description: source.descricao || ''
+                })),
                 connections: []
             },
             news: {
@@ -58,7 +63,7 @@ router.get('/check', async (req, res) => {
 
         // Dados do dashboard - AGORA PODE USAR networkData
         const dashboardData = {
-            sourcesCount: 0, // Começar com 0 - será calculado dinamicamente
+            sourcesCount: sourceCounts.total,
             newsCount: counts.total,
             fakeNewsCount: counts.fake,
             averageCredibility: recentAnalyses.length > 0 ? 
@@ -69,7 +74,8 @@ router.get('/check', async (req, res) => {
                 texto: analysis.content,
                 credibility: analysis.confidence,
                 risk_level: analysis.risk_level,
-                is_fake_news: analysis.is_fake_news
+                is_fake_news: analysis.is_fake_news,
+                created_at: analysis.created_at
             })),
             riskDistribution: {
                 low: recentAnalyses.length > 0 ? 
@@ -79,16 +85,31 @@ router.get('/check', async (req, res) => {
                 high: recentAnalyses.length > 0 ? 
                     Math.round((recentAnalyses.filter(a => a.risk_level === 'alto').length / recentAnalyses.length) * 100) : 0
             },
-            trendData: recentAnalyses.map((analysis, index) => {
-                const date = new Date(analysis.created_at || new Date());
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return {
-                    date: `${month}/${year}`,
-                    count: recentAnalyses.length - index,
-                    fakeCount: analysis.is_fake_news ? 1 : 0
-                };
-            }),
+            trendData: (() => {
+                // Agrupar análises por mês/ano
+                const groupedByMonth = {};
+                recentAnalyses.forEach(analysis => {
+                    const date = new Date(analysis.created_at || new Date());
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    const key = `${month}/${year}`;
+                    
+                    if (!groupedByMonth[key]) {
+                        groupedByMonth[key] = { date: key, count: 0, fakeCount: 0 };
+                    }
+                    groupedByMonth[key].count++;
+                    if (analysis.is_fake_news) {
+                        groupedByMonth[key].fakeCount++;
+                    }
+                });
+                
+                // Converter objeto em array e ordenar por data
+                return Object.values(groupedByMonth).sort((a, b) => {
+                    const [monthA, yearA] = a.date.split('/').map(Number);
+                    const [monthB, yearB] = b.date.split('/').map(Number);
+                    return (yearA * 12 + monthA) - (yearB * 12 + monthB);
+                });
+            })(),
             connectionsCount: networkData.news.connections.length
         };
 
