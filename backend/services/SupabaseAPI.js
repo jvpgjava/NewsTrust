@@ -25,10 +25,9 @@ class SupabaseAPI {
                 confidence: analysisData.confidence,
                 risk_level: analysisData.riskLevel,
                 is_fake_news: analysisData.isFakeNews,
-                reasons: JSON.stringify(analysisData.reasons),
-                recommendations: JSON.stringify(analysisData.recommendations),
-                detailed_analysis: analysisData.detailedAnalysis,
-                source: analysisData.source || 'Groq'
+                reasons: Array.isArray(analysisData.reasons) ? analysisData.reasons : [],
+                recommendations: Array.isArray(analysisData.recommendations) ? analysisData.recommendations : [],
+                detailed_analysis: analysisData.detailedAnalysis || ''
             };
             
             console.log('🔍 Payload para Supabase:', payload);
