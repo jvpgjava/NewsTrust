@@ -52,21 +52,9 @@ router.get('/check', async (req, res) => {
             }
         };
 
-        // Adicionar conexões entre notícias similares
-        if (networkData.news.nodes.length > 1) {
-            networkData.news.connections = [];
-            for (let i = 0; i < networkData.news.nodes.length; i++) {
-                for (let j = i + 1; j < networkData.news.nodes.length; j++) {
-                    if (Math.random() > 0.2) { // 80% chance de conexão
-                        networkData.news.connections.push({
-                            source: networkData.news.nodes[i].id,
-                            target: networkData.news.nodes[j].id,
-                            strength: Math.random() * 0.5 + 0.5
-                        });
-                    }
-                }
-            }
-        }
+        // Adicionar conexões entre notícias similares (baseado em conteúdo)
+        // Por enquanto, não criar conexões aleatórias - implementar análise de similaridade no futuro
+        networkData.news.connections = [];
 
         // Dados do dashboard - AGORA PODE USAR networkData
         const dashboardData = {
@@ -84,9 +72,12 @@ router.get('/check', async (req, res) => {
                 is_fake_news: analysis.is_fake_news
             })),
             riskDistribution: {
-                low: recentAnalyses.filter(a => a.risk_level === 'baixo').length,
-                medium: recentAnalyses.filter(a => a.risk_level === 'medio').length,
-                high: recentAnalyses.filter(a => a.risk_level === 'alto').length
+                low: recentAnalyses.length > 0 ? 
+                    Math.round((recentAnalyses.filter(a => a.risk_level === 'baixo').length / recentAnalyses.length) * 100) : 0,
+                medium: recentAnalyses.length > 0 ? 
+                    Math.round((recentAnalyses.filter(a => a.risk_level === 'medio').length / recentAnalyses.length) * 100) : 0,
+                high: recentAnalyses.length > 0 ? 
+                    Math.round((recentAnalyses.filter(a => a.risk_level === 'alto').length / recentAnalyses.length) * 100) : 0
             },
             trendData: recentAnalyses.map((analysis, index) => ({
                 date: analysis.created_at || new Date().toISOString(),
@@ -115,6 +106,7 @@ router.get('/check', async (req, res) => {
         res.json({
             success: true,
             dashboard: dashboardData,
+            recentAnalyses: dashboardData.recentAnalyses, // Adicionar na raiz para o frontend
             network: networkData,
             timestamp: new Date().toISOString()
         });

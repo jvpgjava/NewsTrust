@@ -63,11 +63,12 @@ class SupabaseAPI {
         try {
             console.log('📊 Buscando análises recentes via Supabase API...');
             
-            const response = await fetch(`${this.url}/rest/v1/analises_conteudo?order=created_at.desc&limit=${limit}`, {
+            const response = await fetch(`${this.url}/rest/v1/analises_conteudo?select=*&order=created_at.desc&limit=${limit}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${this.serviceKey}`,
-                    'apikey': this.apiKey
+                    'apikey': this.apiKey,
+                    'Content-Type': 'application/json'
                 }
             });
 
