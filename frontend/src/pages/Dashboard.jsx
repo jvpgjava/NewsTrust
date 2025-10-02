@@ -210,9 +210,10 @@ export default function Dashboard() {
                   stroke="#3B82F6" 
                   strokeWidth={3} 
                   name="Análises"
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2, fill: 'white' }}
-                  connectNulls={false}
+                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
+                  activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2, fill: 'white' }}
+                  connectNulls={true}
+                  isAnimationActive={true}
                 />
             </LineChart>
           </ResponsiveContainer>
