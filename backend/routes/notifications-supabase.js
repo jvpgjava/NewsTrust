@@ -4,6 +4,18 @@ import SupabaseAPI from '../services/SupabaseAPI.js';
 const router = express.Router();
 const supabaseAPI = new SupabaseAPI();
 
+// Função helper para converter UTC para horário de Brasília (GMT-3)
+function toBrasiliaTime(utcDate) {
+    if (!utcDate) return new Date().toISOString();
+    
+    const date = new Date(utcDate);
+    if (isNaN(date.getTime())) return new Date().toISOString();
+    
+    // Subtrair 3 horas para GMT-3 (Brasília)
+    date.setHours(date.getHours() - 3);
+    return date.toISOString();
+}
+
 // Endpoint para verificar atualizações (polling)
 router.get('/check', async (req, res) => {
     try {
@@ -57,8 +69,28 @@ router.get('/check', async (req, res) => {
             }
         };
 
-        // Adicionar conexões entre notícias similares (baseado em conteúdo)
-        // Por enquanto, não criar conexões aleatórias - implementar análise de similaridade no futuro
+        // Adicionar conexões entre FONTES com credibilidade similar (diferença <= 0.15)
+        if (networkData.sources.nodes.length > 1) {
+            for (let i = 0; i < networkData.sources.nodes.length; i++) {
+                for (let j = i + 1; j < networkData.sources.nodes.length; j++) {
+                    const sourceA = networkData.sources.nodes[i];
+                    const sourceB = networkData.sources.nodes[j];
+                    const credibilityDiff = Math.abs(sourceA.credibility - sourceB.credibility);
+                    
+                    // Criar conexão se a diferença de credibilidade for <= 0.15 (15%)
+                    if (credibilityDiff <= 0.15) {
+                        networkData.sources.connections.push({
+                            source: sourceA.id,
+                            target: sourceB.id,
+                            strength: 1 - credibilityDiff, // Quanto menor a diferença, mais forte a conexão
+                            reason: 'Credibilidade similar'
+                        });
+                    }
+                }
+            }
+        }
+
+        // Notícias não têm conexões (requer análise de similaridade de conteúdo)
         networkData.news.connections = [];
 
         // Dados do dashboard - AGORA PODE USAR networkData
@@ -68,15 +100,30 @@ router.get('/check', async (req, res) => {
             fakeNewsCount: counts.fake,
             averageCredibility: recentAnalyses.length > 0 ? 
                 recentAnalyses.reduce((sum, a) => sum + a.confidence, 0) / recentAnalyses.length : 0,
-            recentAnalyses: recentAnalyses.map(analysis => ({
-                id: analysis.id,
-                title: analysis.title,
-                texto: analysis.content,
-                credibility: analysis.confidence,
-                risk_level: analysis.risk_level,
-                is_fake_news: analysis.is_fake_news,
-                created_at: analysis.created_at
-            })),
+            recentAnalyses: [
+                // Análises de conteúdo
+                ...recentAnalyses.map(analysis => ({
+                    id: analysis.id,
+                    title: analysis.title,
+                    texto: analysis.content,
+                    credibility: analysis.confidence,
+                    risk_level: analysis.risk_level,
+                    is_fake_news: analysis.is_fake_news,
+                    created_at: toBrasiliaTime(analysis.created_at),
+                    type: 'content'
+                })),
+                // Análises de fonte
+                ...recentSources.map(source => ({
+                    id: `source-${source.id}`,
+                    title: `Análise de Fonte: ${source.site}`,
+                    texto: source.descricao || 'Análise de credibilidade de fonte',
+                    credibility: source.peso,
+                    risk_level: source.peso >= 0.7 ? 'baixo' : source.peso >= 0.4 ? 'medio' : 'alto',
+                    is_fake_news: source.peso < 0.4,
+                    created_at: toBrasiliaTime(source.created_at),
+                    type: 'source'
+                }))
+            ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10),
             riskDistribution: {
                 low: recentAnalyses.length > 0 ? 
                     Math.round((recentAnalyses.filter(a => a.risk_level === 'baixo').length / recentAnalyses.length) * 100) : 0,
@@ -89,7 +136,19 @@ router.get('/check', async (req, res) => {
                 // Agrupar análises por mês/ano
                 const groupedByMonth = {};
                 recentAnalyses.forEach(analysis => {
-                    const date = new Date(analysis.created_at || new Date());
+                    // Garantir que created_at é uma data válida
+                    let date;
+                    if (analysis.created_at) {
+                        date = new Date(analysis.created_at);
+                    } else {
+                        date = new Date();
+                    }
+                    
+                    // Validar se a data é válida
+                    if (isNaN(date.getTime())) {
+                        date = new Date();
+                    }
+                    
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const year = date.getFullYear();
                     const key = `${month}/${year}`;
