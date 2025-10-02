@@ -91,30 +91,34 @@ class SupabaseAPI {
         try {
             console.log('📊 Contando análises via Supabase API...');
             
-            // Total de análises
-            const totalResponse = await fetch(`${this.url}/rest/v1/analises_conteudo?select=count`, {
+            // Total de análises - buscar todos os registros
+            const totalResponse = await fetch(`${this.url}/rest/v1/analises_conteudo?select=id`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${this.serviceKey}`,
-                    'apikey': this.apiKey
+                    'apikey': this.apiKey,
+                    'Content-Type': 'application/json'
                 }
             });
 
-            // Fake news
-            const fakeResponse = await fetch(`${this.url}/rest/v1/analises_conteudo?is_fake_news=eq.true&select=count`, {
+            // Fake news - buscar apenas fake news
+            const fakeResponse = await fetch(`${this.url}/rest/v1/analises_conteudo?is_fake_news=eq.true&select=id`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${this.serviceKey}`,
-                    'apikey': this.apiKey
+                    'apikey': this.apiKey,
+                    'Content-Type': 'application/json'
                 }
             });
 
-            const totalCount = totalResponse.ok ? await totalResponse.json() : 0;
-            const fakeCount = fakeResponse.ok ? await fakeResponse.json() : 0;
+            const totalData = totalResponse.ok ? await totalResponse.json() : [];
+            const fakeData = fakeResponse.ok ? await fakeResponse.json() : [];
+
+            console.log(`📊 Total: ${totalData.length}, Fake: ${fakeData.length}`);
 
             return {
-                total: Array.isArray(totalCount) ? totalCount.length : 0,
-                fake: Array.isArray(fakeCount) ? fakeCount.length : 0
+                total: Array.isArray(totalData) ? totalData.length : 0,
+                fake: Array.isArray(fakeData) ? fakeData.length : 0
             };
 
         } catch (error) {
