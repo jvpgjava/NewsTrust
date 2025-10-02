@@ -57,7 +57,7 @@ router.get('/check', async (req, res) => {
             networkData.news.connections = [];
             for (let i = 0; i < networkData.news.nodes.length; i++) {
                 for (let j = i + 1; j < networkData.news.nodes.length; j++) {
-                    if (Math.random() > 0.7) { // 30% chance de conexão
+                    if (Math.random() > 0.2) { // 80% chance de conexão
                         networkData.news.connections.push({
                             source: networkData.news.nodes[i].id,
                             target: networkData.news.nodes[j].id,
@@ -88,7 +88,11 @@ router.get('/check', async (req, res) => {
                 medium: recentAnalyses.filter(a => a.risk_level === 'medio').length,
                 high: recentAnalyses.filter(a => a.risk_level === 'alto').length
             },
-            trendData: [], // Por enquanto vazio
+            trendData: recentAnalyses.map((analysis, index) => ({
+                date: analysis.created_at || new Date().toISOString(),
+                count: recentAnalyses.length - index,
+                fakeCount: analysis.is_fake_news ? 1 : 0
+            })),
             connectionsCount: networkData.news.connections.length
         };
 
