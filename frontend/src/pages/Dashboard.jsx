@@ -175,11 +175,11 @@ export default function Dashboard() {
               <LineChart data={trendData} margin={{ top: 30, right: 40, left: 30, bottom: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="date" 
                   tick={{ fontSize: 12 }}
                   tickFormatter={(value) => {
-                    const [year, month] = value.split('-');
-                    return `${month}/${year.slice(2)}`;
+                    // Já vem no formato MM/YYYY do backend
+                    return value || 'N/A';
                   }}
                   axisLine={{ stroke: '#e0e0e0' }}
                   tickLine={{ stroke: '#e0e0e0' }}
@@ -193,8 +193,8 @@ export default function Dashboard() {
                 />
                 <Tooltip 
                   labelFormatter={(value) => {
-                    const [year, month] = value.split('-');
-                    return `Mês: ${month}/${year}`;
+                    // Já vem no formato MM/YYYY do backend
+                    return `Mês: ${value}`;
                   }}
                   formatter={(value) => [`${value} análises`, 'Total']}
                   contentStyle={{
