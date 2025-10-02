@@ -3,8 +3,8 @@ import fetch from 'node-fetch';
 class SupabaseAPI {
     constructor() {
         this.url = process.env.SUPABASE_URL || 'https://wbbxqslgutfxldmyuekb.supabase.co';
-        this.apiKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_87nAXikdyxSnlidI9ybD8g_GB79tsNX';
-        this.serviceKey = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_y9EP8_t7JHNGbdaRAHdRzA_zY4AsKZD';
+        this.apiKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiYnhxc2xndXRmeGxkbXl1ZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4MTAyMTYsImV4cCI6MjA3NDM4NjIxNn0.BhJwsc7g-4WBXYvcvDY11FVFoG1mXHKjF3zpms_lNKc';
+        this.serviceKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiYnhxc2xndXRmeGxkbXl1ZWtiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODgxMDIxNiwiZXhwIjoyMDc0Mzg2MjE2fQ.a71p5Aigaq2Hz1tarGJi5r2g2o6X9EYtJGurEG8PRZE';
         
         console.log('🔗 SupabaseAPI inicializado');
         console.log('URL:', this.url);
