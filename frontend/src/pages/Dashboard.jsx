@@ -297,7 +297,14 @@ export default function Dashboard() {
                     {analysis.title ? (analysis.title.length > 40 ? analysis.title.substring(0, 40) + '...' : analysis.title) : 'Análise de Notícia'}
                   </h4>
                   <p className="text-xs text-gray-500">
-                    {analysis.created_at ? new Date(analysis.created_at).toLocaleString("pt-BR") : 'Data não disponível'}
+                    {analysis.created_at ? new Date(analysis.created_at).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo",
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'Data não disponível'}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">

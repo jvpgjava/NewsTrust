@@ -4,15 +4,13 @@ import SupabaseAPI from '../services/SupabaseAPI.js';
 const router = express.Router();
 const supabaseAPI = new SupabaseAPI();
 
-// Função helper para converter UTC para horário de Brasília (GMT-3)
-function toBrasiliaTime(utcDate) {
-    if (!utcDate) return new Date().toISOString();
+// Função helper para garantir formato ISO válido
+function ensureValidDate(dateValue) {
+    if (!dateValue) return new Date().toISOString();
     
-    const date = new Date(utcDate);
+    const date = new Date(dateValue);
     if (isNaN(date.getTime())) return new Date().toISOString();
     
-    // Subtrair 3 horas para GMT-3 (Brasília)
-    date.setHours(date.getHours() - 3);
     return date.toISOString();
 }
 
@@ -109,7 +107,7 @@ router.get('/check', async (req, res) => {
                     credibility: analysis.confidence,
                     risk_level: analysis.risk_level,
                     is_fake_news: analysis.is_fake_news,
-                    created_at: toBrasiliaTime(analysis.created_at),
+                    created_at: ensureValidDate(analysis.created_at),
                     type: 'content'
                 })),
                 // Análises de fonte
@@ -120,7 +118,7 @@ router.get('/check', async (req, res) => {
                     credibility: source.peso,
                     risk_level: source.peso >= 0.7 ? 'baixo' : source.peso >= 0.4 ? 'medio' : 'alto',
                     is_fake_news: source.peso < 0.4,
-                    created_at: toBrasiliaTime(source.created_at),
+                    created_at: ensureValidDate(source.created_at),
                     type: 'source'
                 }))
             ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10),
