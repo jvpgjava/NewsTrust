@@ -169,7 +169,7 @@ router.get('/check', async (req, res) => {
                     return (yearA * 12 + monthA) - (yearB * 12 + monthB);
                 });
             })(),
-            connectionsCount: networkData.news.connections.length
+            connectionsCount: networkData.sources.connections.length + networkData.news.connections.length
         };
 
         // DEBUG: Verificar dados finais

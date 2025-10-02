@@ -191,6 +191,84 @@ const About = () => {
         </div>
       </div>
 
+      {/* Desenvolvido e Pensado Por */}
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 -mt-1">
+            <img 
+              src="/iconeNewsTrust.png" 
+              alt="Desenvolvido Por" 
+              className="w-8 h-8 sm:w-10 sm:h-10"
+            />
+          </div>
+          <div className="ml-4 w-full">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Desenvolvido e Pensado Por</h2>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              O NewsTrust é resultado do trabalho colaborativo de uma equipe dedicada a combater a desinformação 
+              e promover a verificação de notícias de forma acessível e eficaz.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Desenvolvedores */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div className="flex items-center mb-2">
+                  <Users className="h-5 w-5 text-blue-600 mr-2" />
+                  <h3 className="font-semibold text-gray-900">Equipe de Desenvolvimento</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    <span>João Vitor Prestes Grando</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    <span>Évilyn Flores Francisco</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    <span>Guilherme Lima Sarmento</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    <span>Vinicius Martinez da Silva</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    <span>Rafael Ramos da Luz</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Professor */}
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <div className="flex items-center mb-2">
+                  <Target className="h-5 w-5 text-purple-600 mr-2" />
+                  <h3 className="font-semibold text-gray-900">Orientação</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start">
+                    <span className="text-purple-600 mr-2">•</span>
+                    <span>Arthur Marques de Oliveira</span>
+                  </li>
+                  <li className="text-xs text-purple-600 font-medium ml-4">Professor Auxiliar</li>
+                </ul>
+              </div>
+
+              {/* Instituição */}
+              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="flex items-center mb-2">
+                  <Globe className="h-5 w-5 text-green-600 mr-2" />
+                  <h3 className="font-semibold text-gray-900">Instituição</h3>
+                </div>
+                <p className="text-sm text-gray-700">
+                  Projeto desenvolvido como trabalho acadêmico com foco em aplicação prática de tecnologias 
+                  de verificação de informações e combate à desinformação.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   );
