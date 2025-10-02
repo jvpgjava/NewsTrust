@@ -196,7 +196,7 @@ const About = () => {
         <div className="flex items-start">
           <div className="flex-shrink-0 -mt-1">
             <img 
-              src="/iconeNewsTrust.png" 
+              src="/iconeDesenvolvidoPor.png" 
               alt="Desenvolvido Por" 
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
@@ -208,62 +208,39 @@ const About = () => {
               e promover a verificação de notícias de forma acessível e eficaz.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Desenvolvedores */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <div className="flex items-center mb-2">
-                  <Users className="h-5 w-5 text-blue-600 mr-2" />
-                  <h3 className="font-semibold text-gray-900">Equipe de Desenvolvimento</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">•</span>
-                    <span>João Vitor Prestes Grando</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">•</span>
-                    <span>Évilyn Flores Francisco</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">•</span>
-                    <span>Guilherme Lima Sarmento</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">•</span>
-                    <span>Vinicius Martinez da Silva</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">•</span>
-                    <span>Rafael Ramos da Luz</span>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-900 text-lg mb-3">Equipe de Desenvolvimento:</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3 text-lg">•</span>
+                  <span>João Vitor Prestes Grando</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3 text-lg">•</span>
+                  <span>Évilyn Flores Francisco</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3 text-lg">•</span>
+                  <span>Guilherme Lima Sarmento</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3 text-lg">•</span>
+                  <span>Vinicius Martinez da Silva</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-blue-600 mr-3 text-lg">•</span>
+                  <span>Rafael Ramos da Luz</span>
+                </li>
+              </ul>
+
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="font-semibold text-gray-900 text-lg mb-3">Orientação:</h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-center">
+                    <span className="text-purple-600 mr-3 text-lg">•</span>
+                    <span>Arthur Marques de Oliveira <span className="text-sm text-purple-600 font-medium">(Professor Auxiliar)</span></span>
                   </li>
                 </ul>
-              </div>
-
-              {/* Professor */}
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                <div className="flex items-center mb-2">
-                  <Target className="h-5 w-5 text-purple-600 mr-2" />
-                  <h3 className="font-semibold text-gray-900">Orientação</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li className="flex items-start">
-                    <span className="text-purple-600 mr-2">•</span>
-                    <span>Arthur Marques de Oliveira</span>
-                  </li>
-                  <li className="text-xs text-purple-600 font-medium ml-4">Professor Auxiliar</li>
-                </ul>
-              </div>
-
-              {/* Instituição */}
-              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                <div className="flex items-center mb-2">
-                  <Globe className="h-5 w-5 text-green-600 mr-2" />
-                  <h3 className="font-semibold text-gray-900">Instituição</h3>
-                </div>
-                <p className="text-sm text-gray-700">
-                  Projeto desenvolvido como trabalho acadêmico com foco em aplicação prática de tecnologias 
-                  de verificação de informações e combate à desinformação.
-                </p>
               </div>
             </div>
           </div>
