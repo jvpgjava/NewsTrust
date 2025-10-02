@@ -79,11 +79,16 @@ router.get('/check', async (req, res) => {
                 high: recentAnalyses.length > 0 ? 
                     Math.round((recentAnalyses.filter(a => a.risk_level === 'alto').length / recentAnalyses.length) * 100) : 0
             },
-            trendData: recentAnalyses.map((analysis, index) => ({
-                date: analysis.created_at || new Date().toISOString(),
-                count: recentAnalyses.length - index,
-                fakeCount: analysis.is_fake_news ? 1 : 0
-            })),
+            trendData: recentAnalyses.map((analysis, index) => {
+                const date = new Date(analysis.created_at || new Date());
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return {
+                    date: `${month}/${year}`,
+                    count: recentAnalyses.length - index,
+                    fakeCount: analysis.is_fake_news ? 1 : 0
+                };
+            }),
             connectionsCount: networkData.news.connections.length
         };
 

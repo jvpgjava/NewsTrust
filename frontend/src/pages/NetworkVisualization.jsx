@@ -104,34 +104,43 @@ export default function NetworkVisualization() {
     console.log(`🎯 Verificando visualização para grafo ${activeGraph}:`, {
       nodes: currentGraphData.nodes.length,
       links: currentGraphData.links.length,
-      graphInitialized: graphInitialized
+      graphInitialized: graphInitialized,
+      activeGraph: activeGraph,
+      lastGraphType: lastGraphType
     });
 
     // Verificar se trocou de tipo de grafo
     const graphTypeChanged = lastGraphType !== null && lastGraphType !== activeGraph;
     
-    // Só criar se tem dados e (ainda não foi inicializado OU trocou de tipo de grafo)
-    if (currentGraphData.nodes.length > 0 && (!graphInitialized || graphTypeChanged)) {
-      console.log('🔄 Criando visualização:', graphInitialized ? 'troca de grafo' : 'primeira vez');
+    // SEMPRE recriar quando trocar de tipo de grafo
+    if (graphTypeChanged) {
+      console.log('🔄 Trocou de grafo - recriando visualização');
       
       // Parar simulação anterior se existir
       if (simulation) {
         simulation.stop();
       }
 
-      // Resetar inicialização se trocou de grafo
-      if (graphTypeChanged) {
-        setGraphInitialized(false);
-        // Limpar nó selecionado ao trocar de grafo
-        setSelectedNode(null);
-        console.log('🧹 Nó selecionado limpo ao trocar de grafo');
+      // Resetar estado
+      setGraphInitialized(false);
+      setSelectedNode(null);
+      console.log('🧹 Estado limpo ao trocar de grafo');
+      
+      // Criar novo grafo se tem dados
+      if (currentGraphData.nodes.length > 0) {
+        createVisualization(currentGraphData);
       }
-
+      setLastGraphType(activeGraph);
+    } 
+    // Se não trocou, mas tem dados e ainda não foi inicializado
+    else if (currentGraphData.nodes.length > 0 && !graphInitialized) {
+      console.log('🔄 Primeira inicialização do grafo');
       createVisualization(currentGraphData);
       setLastGraphType(activeGraph);
-    } else if (currentGraphData.nodes.length > 0 && graphInitialized) {
-      console.log('✅ Grafo já inicializado, mantendo estável - zoom preservado');
-      // Atualizar dados sem recriar o grafo
+    }
+    // Se já está inicializado e tem dados, só atualizar
+    else if (currentGraphData.nodes.length > 0 && graphInitialized && !graphTypeChanged) {
+      console.log('✅ Grafo já inicializado, atualizando dados - zoom preservado');
       updateGraphData(currentGraphData);
     }
   }, [sourcesGraphData, newsGraphData, activeGraph]);
