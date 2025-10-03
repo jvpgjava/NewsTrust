@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
-// import pdfParse from 'pdf-parse'; // Moved to lazy loading
 import Tesseract from 'tesseract.js';
+// pdf-parse removido - causa problemas no Vercel serverless
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,41 +66,15 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
-            console.log('📄 Iniciando processamento de PDF...', {
+            console.log('📄 Iniciando processamento de PDF com OCR (Tesseract)...', {
                 bufferSize: buffer.length,
                 bufferType: Buffer.isBuffer(buffer) ? 'Buffer válido' : 'Não é Buffer'
             });
             
-            // MÉTODO 1: Tentar pdf-parse primeiro
-            try {
-                const pdfParse = (await import('pdf-parse')).default;
-                console.log('✅ pdf-parse importado com sucesso');
-                
-                // Processar buffer diretamente
-                const data = await pdfParse(buffer, {
-                    max: 0
-                });
-                
-                console.log('✅ PDF processado com pdf-parse:', {
-                    pages: data.numpages,
-                    textLength: data.text.length
-                });
-                
-                if (data.text && data.text.trim().length > 0) {
-                    return data.text;
-                }
-                
-                console.warn('⚠️ pdf-parse não extraiu texto, tentando OCR...');
-            } catch (pdfError) {
-                console.error('⚠️ pdf-parse falhou:', pdfError.message);
-                console.log('🔄 Tentando converter PDF para imagem e usar OCR...');
-            }
+            // Usar Tesseract OCR diretamente para processar o PDF
+            // Tesseract pode processar PDFs como imagens
+            console.log('🔍 Extraindo texto do PDF enviado pelo usuário...');
             
-            // MÉTODO 2: Fallback - Converter PDF para imagem e usar OCR
-            console.log('🖼️ Convertendo PDF para imagem e usando OCR (Tesseract)...');
-            
-            // Usar Tesseract para processar o PDF diretamente
-            // Tesseract pode processar PDFs que são basicamente imagens
             const { data: { text } } = await Tesseract.recognize(
                 buffer,
                 'por+eng', // Português + Inglês
@@ -114,16 +88,16 @@ class FileProcessor {
             );
             
             const extractedText = text.trim();
-            console.log(`✅ OCR concluído no PDF. Texto extraído: ${extractedText.length} caracteres`);
+            console.log(`✅ Texto extraído do PDF do usuário: ${extractedText.length} caracteres`);
             
             if (extractedText.length === 0) {
-                throw new Error('PDF não contém texto extraível. O arquivo pode estar vazio ou corrompido.');
+                throw new Error('PDF não contém texto extraível. O arquivo pode estar vazio, corrompido ou com texto muito pequeno.');
             }
             
             return extractedText;
             
         } catch (error) {
-            console.error('❌ Erro fatal ao processar PDF:', {
+            console.error('❌ Erro ao processar PDF:', {
                 message: error.message,
                 stack: error.stack,
                 code: error.code
