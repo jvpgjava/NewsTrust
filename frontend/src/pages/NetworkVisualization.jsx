@@ -413,8 +413,8 @@ export default function NetworkVisualization() {
           const credibility = d.credibility || d.peso || 0.5
           return Math.max(8, credibility * 20)
         } else {
-          const confidence = d.credibility || d.confidence || 0.5
-          return Math.max(8, confidence * 20)
+          const credibility = d.credibility || 0.5
+          return Math.max(8, credibility * 20)
         }
       })
       .attr("fill", d => getNodeColor(d))
@@ -432,8 +432,8 @@ export default function NetworkVisualization() {
             const credibility = d.credibility || d.peso || 0.5
             return Math.max(10, credibility * 22)
           } else {
-            const confidence = d.confidence || 0.5
-            return Math.max(10, confidence * 22)
+            const credibility = d.credibility || 0.5
+            return Math.max(10, credibility * 22)
           }
         })
       })
@@ -444,8 +444,8 @@ export default function NetworkVisualization() {
             const credibility = d.credibility || d.peso || 0.5
             return Math.max(8, credibility * 20)
           } else {
-            const confidence = d.confidence || 0.5
-            return Math.max(8, confidence * 20)
+            const credibility = d.credibility || 0.5
+            return Math.max(8, credibility * 20)
           }
         })
       })
@@ -835,7 +835,7 @@ export default function NetworkVisualization() {
                     <div className="flex justify-between">
                       <span className="text-xs sm:text-sm text-gray-600">Credibilidade:</span>
                       <span className="text-xs sm:text-sm font-medium">
-                        {((selectedNode.confidence || 0.5) * 100).toFixed(1)}%
+                        {((selectedNode.credibility || 0.5) * 100).toFixed(1)}%
                       </span>
                     </div>
 
