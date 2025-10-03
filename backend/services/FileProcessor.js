@@ -2,14 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
-import Tesseract from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class FileProcessor {
     constructor() {
-        console.log('🔧 FileProcessor v3.0 - OCR via CDN para serverless');
+        console.log('🔧 FileProcessor v4.0 - OCR otimizado para Vercel');
         // No Vercel, não criar pasta de uploads
         if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
             this.uploadDir = null; // Não usar uploads no Vercel
@@ -17,12 +17,30 @@ class FileProcessor {
             this.uploadDir = path.join(__dirname, '../uploads');
             this.ensureUploadDir();
         }
+        
+        // Worker reutilizável para OCR
+        this.worker = null;
     }
 
     ensureUploadDir() {
         if (this.uploadDir && !fs.existsSync(this.uploadDir)) {
             fs.mkdirSync(this.uploadDir, { recursive: true });
         }
+    }
+
+    async getWorker() {
+        if (!this.worker) {
+            console.log('🔄 Inicializando worker OCR...');
+            this.worker = await createWorker('por+eng', 1, {
+                logger: m => {
+                    if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
+                        console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
+                    }
+                }
+            });
+            console.log('✅ Worker OCR pronto!');
+        }
+        return this.worker;
     }
 
     async processFile(buffer, mimetype, originalName) {
@@ -70,25 +88,14 @@ class FileProcessor {
                 bufferSize: buffer.length
             });
             
-            // Usar OCR diretamente para processar PDFs
-            // Tesseract pode tentar extrair texto de PDFs que são imagens
+            // Obter worker reutilizável
+            const worker = await this.getWorker();
+            
             console.log('🖼️ Usando OCR (Tesseract) para extrair texto do PDF...');
             
-            const { data: { text } } = await Tesseract.recognize(
-                buffer,
-                'por+eng',
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            console.log(`📖 OCR: ${Math.round(m.progress * 100)}%`);
-                        }
-                    },
-                    // Configuração para ambiente serverless
-                    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-                    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-                    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js'
-                }
-            );
+            const { data: { text } } = await worker.recognize(buffer, {
+                rotateAuto: true
+            });
             
             const extractedText = text.trim();
             console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
@@ -125,21 +132,12 @@ class FileProcessor {
         try {
             console.log('🔍 Iniciando OCR para extrair texto da imagem...');
             
-            const { data: { text } } = await Tesseract.recognize(
-                buffer,
-                'por+eng', // Português + Inglês
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            console.log(`📖 OCR Progress: ${Math.round(m.progress * 100)}%`);
-                        }
-                    },
-                    // Configuração para ambiente serverless
-                    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-                    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-                    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js'
-                }
-            );
+            // Obter worker reutilizável
+            const worker = await this.getWorker();
+            
+            const { data: { text } } = await worker.recognize(buffer, {
+                rotateAuto: true
+            });
             
             const extractedText = text.trim();
             console.log(`✅ OCR concluído. Texto extraído: ${extractedText.length} caracteres`);
