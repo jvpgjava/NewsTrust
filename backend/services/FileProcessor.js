@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
 import Tesseract from 'tesseract.js';
-// pdf-parse removido - causa problemas no Vercel serverless
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,41 +66,61 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
-            console.log('📄 Iniciando processamento de PDF com OCR (Tesseract)...', {
+            console.log('📄 Iniciando processamento de PDF com pdf.js...', {
                 bufferSize: buffer.length,
                 bufferType: Buffer.isBuffer(buffer) ? 'Buffer válido' : 'Não é Buffer'
             });
             
-            // Usar Tesseract OCR diretamente para processar o PDF
-            // Tesseract pode processar PDFs como imagens
-            console.log('🔍 Extraindo texto do PDF enviado pelo usuário...');
+            // Converter buffer para Uint8Array (formato que pdf.js aceita)
+            const uint8Array = new Uint8Array(buffer);
             
-            const { data: { text } } = await Tesseract.recognize(
-                buffer,
-                'por+eng', // Português + Inglês
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            console.log(`📖 OCR Progress: ${Math.round(m.progress * 100)}%`);
-                        }
-                    }
-                }
-            );
+            console.log('📚 Carregando documento PDF...');
+            const loadingTask = pdfjsLib.getDocument({
+                data: uint8Array,
+                useSystemFonts: true,
+                disableFontFace: false,
+            });
             
-            const extractedText = text.trim();
-            console.log(`✅ Texto extraído do PDF do usuário: ${extractedText.length} caracteres`);
+            const pdfDocument = await loadingTask.promise;
+            console.log(`✅ PDF carregado. Páginas: ${pdfDocument.numPages}`);
+            
+            let fullText = '';
+            
+            // Extrair texto de todas as páginas
+            for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+                console.log(`📖 Processando página ${pageNum}/${pdfDocument.numPages}...`);
+                
+                const page = await pdfDocument.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                
+                // Concatenar todos os itens de texto da página
+                const pageText = textContent.items
+                    .map(item => item.str)
+                    .join(' ');
+                
+                fullText += pageText + '\n\n';
+            }
+            
+            const extractedText = fullText.trim();
+            console.log(`✅ Texto extraído do PDF: ${extractedText.length} caracteres`);
             
             if (extractedText.length === 0) {
-                throw new Error('PDF não contém texto extraível. O arquivo pode estar vazio, corrompido ou com texto muito pequeno.');
+                console.log('⚠️ PDF não tem texto extraível, tentando OCR...');
+                throw new Error('PDF_NO_TEXT');
             }
             
             return extractedText;
             
         } catch (error) {
+            // Se o PDF não tem texto extraível, usar OCR como fallback
+            if (error.message === 'PDF_NO_TEXT') {
+                console.log('🖼️ PDF escaneado detectado, usando OCR...');
+                return await this.processImageBuffer(buffer, 'application/pdf');
+            }
+            
             console.error('❌ Erro ao processar PDF:', {
                 message: error.message,
-                stack: error.stack,
-                code: error.code
+                stack: error.stack
             });
             throw new Error(`Erro ao processar PDF: ${error.message}`);
         }
