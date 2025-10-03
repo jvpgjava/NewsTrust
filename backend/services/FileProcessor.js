@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 class FileProcessor {
     constructor() {
+        console.log('🔧 FileProcessor v2.0 - Sem pdfjs-dist');
         // No Vercel, não criar pasta de uploads
         if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
             this.uploadDir = null; // Não usar uploads no Vercel
