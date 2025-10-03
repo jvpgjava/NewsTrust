@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 class FileProcessor {
     constructor() {
-        console.log('🔧 FileProcessor v2.0 - Sem pdfjs-dist');
+        console.log('🔧 FileProcessor v3.0 - OCR via CDN para serverless');
         // No Vercel, não criar pasta de uploads
         if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
             this.uploadDir = null; // Não usar uploads no Vercel
@@ -82,7 +82,11 @@ class FileProcessor {
                         if (m.status === 'recognizing text') {
                             console.log(`📖 OCR: ${Math.round(m.progress * 100)}%`);
                         }
-                    }
+                    },
+                    // Configuração para ambiente serverless
+                    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+                    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+                    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js'
                 }
             );
             
@@ -129,7 +133,11 @@ class FileProcessor {
                         if (m.status === 'recognizing text') {
                             console.log(`📖 OCR Progress: ${Math.round(m.progress * 100)}%`);
                         }
-                    }
+                    },
+                    // Configuração para ambiente serverless
+                    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+                    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+                    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js'
                 }
             );
             
