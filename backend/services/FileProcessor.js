@@ -66,10 +66,37 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
+            console.log('📄 Iniciando processamento de PDF...', {
+                bufferSize: buffer.length,
+                bufferType: Buffer.isBuffer(buffer) ? 'Buffer válido' : 'Não é Buffer'
+            });
+            
             const pdfParse = (await import('pdf-parse')).default;
-            const data = await pdfParse(buffer);
+            console.log('✅ pdf-parse importado com sucesso');
+            
+            // Processar buffer diretamente (sem salvar em disco)
+            const data = await pdfParse(buffer, {
+                // Opções para evitar salvar em disco
+                max: 0, // Sem limite de páginas
+                version: 'v2.0' // Usar versão mais recente
+            });
+            
+            console.log('✅ PDF processado:', {
+                pages: data.numpages,
+                textLength: data.text.length
+            });
+            
+            if (!data.text || data.text.trim().length === 0) {
+                throw new Error('PDF não contém texto extraível. Use OCR para PDFs escaneados.');
+            }
+            
             return data.text;
         } catch (error) {
+            console.error('❌ Erro detalhado ao processar PDF:', {
+                message: error.message,
+                stack: error.stack,
+                code: error.code
+            });
             throw new Error(`Erro ao processar PDF: ${error.message}`);
         }
     }
