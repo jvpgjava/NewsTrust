@@ -71,28 +71,59 @@ class FileProcessor {
                 bufferType: Buffer.isBuffer(buffer) ? 'Buffer válido' : 'Não é Buffer'
             });
             
-            const pdfParse = (await import('pdf-parse')).default;
-            console.log('✅ pdf-parse importado com sucesso');
-            
-            // Processar buffer diretamente (sem salvar em disco)
-            const data = await pdfParse(buffer, {
-                // Opções para evitar salvar em disco
-                max: 0, // Sem limite de páginas
-                version: 'v2.0' // Usar versão mais recente
-            });
-            
-            console.log('✅ PDF processado:', {
-                pages: data.numpages,
-                textLength: data.text.length
-            });
-            
-            if (!data.text || data.text.trim().length === 0) {
-                throw new Error('PDF não contém texto extraível. Use OCR para PDFs escaneados.');
+            // MÉTODO 1: Tentar pdf-parse primeiro
+            try {
+                const pdfParse = (await import('pdf-parse')).default;
+                console.log('✅ pdf-parse importado com sucesso');
+                
+                // Processar buffer diretamente
+                const data = await pdfParse(buffer, {
+                    max: 0
+                });
+                
+                console.log('✅ PDF processado com pdf-parse:', {
+                    pages: data.numpages,
+                    textLength: data.text.length
+                });
+                
+                if (data.text && data.text.trim().length > 0) {
+                    return data.text;
+                }
+                
+                console.warn('⚠️ pdf-parse não extraiu texto, tentando OCR...');
+            } catch (pdfError) {
+                console.error('⚠️ pdf-parse falhou:', pdfError.message);
+                console.log('🔄 Tentando converter PDF para imagem e usar OCR...');
             }
             
-            return data.text;
+            // MÉTODO 2: Fallback - Converter PDF para imagem e usar OCR
+            console.log('🖼️ Convertendo PDF para imagem e usando OCR (Tesseract)...');
+            
+            // Usar Tesseract para processar o PDF diretamente
+            // Tesseract pode processar PDFs que são basicamente imagens
+            const { data: { text } } = await Tesseract.recognize(
+                buffer,
+                'por+eng', // Português + Inglês
+                {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            console.log(`📖 OCR Progress: ${Math.round(m.progress * 100)}%`);
+                        }
+                    }
+                }
+            );
+            
+            const extractedText = text.trim();
+            console.log(`✅ OCR concluído no PDF. Texto extraído: ${extractedText.length} caracteres`);
+            
+            if (extractedText.length === 0) {
+                throw new Error('PDF não contém texto extraível. O arquivo pode estar vazio ou corrompido.');
+            }
+            
+            return extractedText;
+            
         } catch (error) {
-            console.error('❌ Erro detalhado ao processar PDF:', {
+            console.error('❌ Erro fatal ao processar PDF:', {
                 message: error.message,
                 stack: error.stack,
                 code: error.code
