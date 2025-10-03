@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
 import Tesseract from 'tesseract.js';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,63 +65,45 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
-            console.log('📄 Iniciando processamento de PDF com pdf.js...', {
-                bufferSize: buffer.length,
-                bufferType: Buffer.isBuffer(buffer) ? 'Buffer válido' : 'Não é Buffer'
+            console.log('📄 Tentando processar PDF com OCR...', {
+                bufferSize: buffer.length
             });
             
-            // Converter buffer para Uint8Array (formato que pdf.js aceita)
-            const uint8Array = new Uint8Array(buffer);
+            // Usar OCR diretamente para processar PDFs
+            // Tesseract pode tentar extrair texto de PDFs que são imagens
+            console.log('🖼️ Usando OCR (Tesseract) para extrair texto do PDF...');
             
-            console.log('📚 Carregando documento PDF...');
-            const loadingTask = pdfjsLib.getDocument({
-                data: uint8Array,
-                useSystemFonts: true,
-                disableFontFace: false,
-            });
+            const { data: { text } } = await Tesseract.recognize(
+                buffer,
+                'por+eng',
+                {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            console.log(`📖 OCR: ${Math.round(m.progress * 100)}%`);
+                        }
+                    }
+                }
+            );
             
-            const pdfDocument = await loadingTask.promise;
-            console.log(`✅ PDF carregado. Páginas: ${pdfDocument.numPages}`);
+            const extractedText = text.trim();
+            console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
             
-            let fullText = '';
-            
-            // Extrair texto de todas as páginas
-            for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-                console.log(`📖 Processando página ${pageNum}/${pdfDocument.numPages}...`);
-                
-                const page = await pdfDocument.getPage(pageNum);
-                const textContent = await page.getTextContent();
-                
-                // Concatenar todos os itens de texto da página
-                const pageText = textContent.items
-                    .map(item => item.str)
-                    .join(' ');
-                
-                fullText += pageText + '\n\n';
-            }
-            
-            const extractedText = fullText.trim();
-            console.log(`✅ Texto extraído do PDF: ${extractedText.length} caracteres`);
-            
-            if (extractedText.length === 0) {
-                console.log('⚠️ PDF não tem texto extraível, tentando OCR...');
-                throw new Error('PDF_NO_TEXT');
+            if (extractedText.length < 10) {
+                throw new Error(
+                    'Não foi possível extrair texto do PDF. ' +
+                    'Tente converter o PDF para imagem (PNG/JPG) ou use o formato DOCX/TXT. ' +
+                    'Você também pode copiar e colar o texto diretamente.'
+                );
             }
             
             return extractedText;
             
         } catch (error) {
-            // Se o PDF não tem texto extraível, usar OCR como fallback
-            if (error.message === 'PDF_NO_TEXT') {
-                console.log('🖼️ PDF escaneado detectado, usando OCR...');
-                return await this.processImageBuffer(buffer, 'application/pdf');
-            }
-            
-            console.error('❌ Erro ao processar PDF:', {
-                message: error.message,
-                stack: error.stack
-            });
-            throw new Error(`Erro ao processar PDF: ${error.message}`);
+            console.error('❌ Erro ao processar PDF:', error.message);
+            throw new Error(
+                'Erro ao processar PDF. ' +
+                'Tente: 1) Converter para PNG/JPG, 2) Usar DOCX/TXT, ou 3) Copiar e colar o texto diretamente.'
+            );
         }
     }
 
