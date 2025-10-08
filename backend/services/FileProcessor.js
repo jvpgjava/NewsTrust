@@ -38,7 +38,12 @@ class FileProcessor {
                         if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
                             console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
                         }
-                    }
+                    },
+                    // Configurações específicas para Vercel
+                    ...(process.env.VERCEL && {
+                        workerPath: 'https://unpkg.com/tesseract.js@4.1.1/dist/worker.min.js',
+                        langPath: 'https://tessdata.projectnaptha.com/4.0.0'
+                    })
                 };
                 
                 this.worker = await createWorker('por+eng', 1, options);
