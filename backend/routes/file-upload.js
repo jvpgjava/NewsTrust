@@ -25,6 +25,13 @@ const upload = multer({
 // Endpoint para upload e análise de arquivo
 router.post('/analyze-file', upload.single('file'), async (req, res) => {
     try {
+        console.log('📁 Recebendo arquivo para análise...', {
+            hasFile: !!req.file,
+            mimetype: req.file?.mimetype,
+            size: req.file?.size,
+            originalName: req.file?.originalname
+        });
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -40,12 +47,24 @@ router.post('/analyze-file', upload.single('file'), async (req, res) => {
             });
         }
 
+        console.log('🔄 Iniciando processamento do arquivo...', {
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            name: req.file.originalname
+        });
+
         // Processar arquivo
         const { title, content, fileInfo } = await fileProcessor.processFile(
             req.file.buffer,
             req.file.mimetype,
             req.file.originalname
         );
+
+        console.log('📄 Conteúdo extraído:', {
+            title,
+            contentLength: content?.length || 0,
+            contentPreview: content?.substring(0, 100) + '...'
+        });
 
         if (!content || content.trim().length === 0) {
             return res.status(400).json({

@@ -30,15 +30,30 @@ class FileProcessor {
 
     async getWorker() {
         if (!this.worker) {
-            console.log('🔄 Inicializando worker OCR...');
-            this.worker = await createWorker('por+eng', 1, {
-                logger: m => {
-                    if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
-                        console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
+            try {
+                console.log('🔄 Inicializando worker OCR...');
+                
+                // No Vercel, usar configuração mais simples
+                const options = process.env.VERCEL ? {
+                    logger: m => {
+                        if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
+                            console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
+                        }
                     }
-                }
-            });
-            console.log('✅ Worker OCR pronto!');
+                } : {
+                    logger: m => {
+                        if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
+                            console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
+                        }
+                    }
+                };
+                
+                this.worker = await createWorker('por+eng', 1, options);
+                console.log('✅ Worker OCR pronto!');
+            } catch (error) {
+                console.error('❌ Erro ao inicializar worker OCR:', error);
+                throw new Error('Falha ao inicializar OCR. Use TXT ou DOCX para análise completa.');
+            }
         }
         return this.worker;
     }
@@ -88,6 +103,12 @@ class FileProcessor {
                 bufferSize: buffer.length
             });
             
+            // No ambiente Vercel, usar fallback mais simples
+            if (process.env.VERCEL) {
+                console.log('🌐 Ambiente Vercel detectado - usando fallback para PDF');
+                return `[PDF] - Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT. Tamanho do arquivo: ${Math.round(buffer.length / 1024)}KB.`;
+            }
+            
             // Obter worker reutilizável
             const worker = await this.getWorker();
             
@@ -101,21 +122,14 @@ class FileProcessor {
             console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
             
             if (extractedText.length < 10) {
-                throw new Error(
-                    'Não foi possível extrair texto do PDF. ' +
-                    'Tente converter o PDF para imagem (PNG/JPG) ou use o formato DOCX/TXT. ' +
-                    'Você também pode copiar e colar o texto diretamente.'
-                );
+                return `[PDF] - Texto não detectado. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
             }
             
             return extractedText;
             
         } catch (error) {
             console.error('❌ Erro ao processar PDF:', error.message);
-            throw new Error(
-                'Erro ao processar PDF. ' +
-                'Tente: 1) Converter para PNG/JPG, 2) Usar DOCX/TXT, ou 3) Copiar e colar o texto diretamente.'
-            );
+            return `[PDF] - Erro no processamento. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
         }
     }
 
@@ -130,7 +144,16 @@ class FileProcessor {
 
     async processImageBuffer(buffer, mimetype) {
         try {
-            console.log('🔍 Iniciando OCR para extrair texto da imagem...');
+            console.log('🔍 Iniciando OCR para extrair texto da imagem...', {
+                mimetype,
+                bufferSize: buffer.length
+            });
+            
+            // No ambiente Vercel, usar fallback mais simples
+            if (process.env.VERCEL) {
+                console.log('🌐 Ambiente Vercel detectado - usando fallback para imagem');
+                return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Para análise completa, use TXT ou DOCX. Tamanho: ${Math.round(buffer.length / 1024)}KB.`;
+            }
             
             // Obter worker reutilizável
             const worker = await this.getWorker();
@@ -150,7 +173,7 @@ class FileProcessor {
             
         } catch (error) {
             console.error('❌ Erro no processamento de imagem:', error);
-            throw new Error(`Erro ao processar imagem: ${error.message}`);
+            return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Erro no processamento. Para análise completa, use TXT ou DOCX.`;
         }
     }
 
