@@ -33,14 +33,7 @@ class FileProcessor {
             try {
                 console.log('🔄 Inicializando worker OCR...');
                 
-                // No Vercel, usar configuração mais simples
-                const options = process.env.VERCEL ? {
-                    logger: m => {
-                        if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
-                            console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
-                        }
-                    }
-                } : {
+                const options = {
                     logger: m => {
                         if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
                             console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
@@ -52,7 +45,7 @@ class FileProcessor {
                 console.log('✅ Worker OCR pronto!');
             } catch (error) {
                 console.error('❌ Erro ao inicializar worker OCR:', error);
-                throw new Error('Falha ao inicializar OCR. Use TXT ou DOCX para análise completa.');
+                throw new Error(`Falha ao inicializar OCR: ${error.message}`);
             }
         }
         return this.worker;
@@ -103,12 +96,6 @@ class FileProcessor {
                 bufferSize: buffer.length
             });
             
-            // No ambiente Vercel, usar fallback mais simples
-            if (process.env.VERCEL) {
-                console.log('🌐 Ambiente Vercel detectado - usando fallback para PDF');
-                return `[PDF] - Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT. Tamanho do arquivo: ${Math.round(buffer.length / 1024)}KB.`;
-            }
-            
             // Obter worker reutilizável
             const worker = await this.getWorker();
             
@@ -122,14 +109,15 @@ class FileProcessor {
             console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
             
             if (extractedText.length < 10) {
-                return `[PDF] - Texto não detectado. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
+                console.log('⚠️ Pouco texto extraído do PDF, mas continuando com análise...');
+                return `[PDF] - Texto limitado extraído. Conteúdo: ${extractedText}`;
             }
             
             return extractedText;
             
         } catch (error) {
             console.error('❌ Erro ao processar PDF:', error.message);
-            return `[PDF] - Erro no processamento. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
+            return `[PDF] - Erro no processamento OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Erro: ${error.message}`;
         }
     }
 
@@ -149,12 +137,6 @@ class FileProcessor {
                 bufferSize: buffer.length
             });
             
-            // No ambiente Vercel, usar fallback mais simples
-            if (process.env.VERCEL) {
-                console.log('🌐 Ambiente Vercel detectado - usando fallback para imagem');
-                return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Para análise completa, use TXT ou DOCX. Tamanho: ${Math.round(buffer.length / 1024)}KB.`;
-            }
-            
             // Obter worker reutilizável
             const worker = await this.getWorker();
             
@@ -166,14 +148,15 @@ class FileProcessor {
             console.log(`✅ OCR concluído. Texto extraído: ${extractedText.length} caracteres`);
             
             if (extractedText.length === 0) {
-                return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Nenhum texto detectado na imagem.`;
+                console.log('⚠️ Nenhum texto detectado na imagem');
+                return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Nenhum texto detectado na imagem. Tamanho: ${Math.round(buffer.length / 1024)}KB.`;
             }
             
             return extractedText;
             
         } catch (error) {
             console.error('❌ Erro no processamento de imagem:', error);
-            return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Erro no processamento. Para análise completa, use TXT ou DOCX.`;
+            return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Erro no OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Erro: ${error.message}`;
         }
     }
 
@@ -189,7 +172,8 @@ class FileProcessor {
             'image/gif',
             'image/bmp',
             'image/webp',
-            'image/tiff'
+            'image/tiff',
+            'image/tif'
         ];
         return allowedTypes.includes(mimetype);
     }
@@ -219,7 +203,8 @@ class FileProcessor {
             'image/gif': 'GIF',
             'image/bmp': 'BMP',
             'image/webp': 'WEBP',
-            'image/tiff': 'TIFF'
+            'image/tiff': 'TIFF',
+            'image/tif': 'TIFF'
         };
         return imageTypes[mimetype] || 'IMAGEM';
     }
