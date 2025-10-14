@@ -1,6 +1,6 @@
 # 🛡️ NewsTrust - Sistema de Detecção de Fake News
 
-Sistema inteligente para análise e detecção de fake news utilizando análise automática de credibilidade de fontes.
+Sistema inteligente para análise e detecção de fake news utilizando análise automática de credibilidade de fontes que pode ser acessado pelo newstrust.me, basta copiar e colar no navegador que acessará o site.
 
 ```bash
 # Clone o repositório
