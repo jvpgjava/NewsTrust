@@ -358,7 +358,58 @@ const NewsAnalysis = () => {
                       Análise de Conteúdo
                     </h3>
                     <form onSubmit={handleContentSubmit} className="space-y-4 sm:space-y-6" noValidate>
-                      {/* Seção de Upload de Arquivo */}
+                      {/* Campos de Título e Conteúdo*/}
+                      <div>
+                        <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
+                          Título da Notícia
+                        </label>
+                        <input
+                          type="text"
+                          value={contentData.title}
+                          onChange={(e) => {
+                            setContentData({ ...contentData, title: e.target.value })
+                            // Limpar erro quando usuário começar a digitar
+                            if (contentValidationError) {
+                              setContentValidationError(false)
+                            }
+                          }}
+                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 text-sm sm:text-base lg:text-lg ${
+                            contentValidationError 
+                              ? 'border-red-500 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
+                          placeholder="Digite o título do conteúdo"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
+                          Conteúdo da Notícia
+                        </label>
+                        <textarea
+                          value={contentData.content}
+                          onChange={(e) => {
+                            setContentData({ ...contentData, content: e.target.value })
+                            // Limpar erro quando usuário começar a digitar
+                            if (contentValidationError) {
+                              setContentValidationError(false)
+                            }
+                          }}
+                          rows="6"
+                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 resize-y text-sm sm:text-base lg:text-lg ${
+                            contentValidationError 
+                              ? 'border-red-500 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
+                          placeholder={uploadedFile ? "Conteúdo será extraído automaticamente do arquivo (PDF/DOCX) ou análise de imagem..." : "Descreva aqui o conteúdo encontrado..."}
+                        ></textarea>
+                        {contentValidationError && (
+                          <p className="text-red-500 text-sm mt-1 font-medium">
+                            É necessário preencher os campos ou anexar um arquivo para análise
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Seção de Upload de Arquivo - Agora embaixo */}
                       <div className="bg-white p-4 sm:p-6 rounded-xl border border-blue-200">
                         <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
                           <Upload className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
@@ -425,56 +476,6 @@ const NewsAnalysis = () => {
                               </button>
                             </div>
                           </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
-                          Título da Notícia
-                        </label>
-                        <input
-                          type="text"
-                          value={contentData.title}
-                          onChange={(e) => {
-                            setContentData({ ...contentData, title: e.target.value })
-                            // Limpar erro quando usuário começar a digitar
-                            if (contentValidationError) {
-                              setContentValidationError(false)
-                            }
-                          }}
-                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 text-sm sm:text-base lg:text-lg ${
-                            contentValidationError 
-                              ? 'border-red-500 focus:ring-red-500' 
-                              : 'border-gray-300 focus:ring-blue-500'
-                          }`}
-                          placeholder="Digite o título do conteúdo"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
-                          Conteúdo da Notícia
-                        </label>
-                        <textarea
-                          value={contentData.content}
-                          onChange={(e) => {
-                            setContentData({ ...contentData, content: e.target.value })
-                            // Limpar erro quando usuário começar a digitar
-                            if (contentValidationError) {
-                              setContentValidationError(false)
-                            }
-                          }}
-                          rows="6"
-                          className={`w-full px-3 sm:px-5 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 resize-y text-sm sm:text-base lg:text-lg ${
-                            contentValidationError 
-                              ? 'border-red-500 focus:ring-red-500' 
-                              : 'border-gray-300 focus:ring-blue-500'
-                          }`}
-                          placeholder={uploadedFile ? "Conteúdo será extraído automaticamente do arquivo (PDF/DOCX) ou análise de imagem..." : "Descreva aqui o conteúdo encontrado..."}
-                        ></textarea>
-                        {contentValidationError && (
-                          <p className="text-red-500 text-sm mt-1 font-medium">
-                            É necessário preencher os campos ou anexar um arquivo para análise
-                          </p>
                         )}
                       </div>
                       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
