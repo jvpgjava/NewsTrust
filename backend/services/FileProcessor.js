@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
 import { createWorker } from 'tesseract.js';
-import pdfParse from 'pdf-parse';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -113,37 +112,21 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
-            console.log('📄 Tentando processar PDF...', {
+            console.log('📄 Tentando processar PDF com OCR...', {
                 bufferSize: buffer.length
             });
             
-            // Primeira tentativa: pdf-parse (mais rápido e confiável)
-            try {
-                console.log('📖 Tentando extrair texto com pdf-parse...');
-                const pdfData = await pdfParse(buffer);
-                const extractedText = pdfData.text.trim();
-                
-                console.log(`✅ Texto extraído com pdf-parse: ${extractedText.length} caracteres`);
-                
-                if (extractedText.length > 10) {
-                    return extractedText;
-                } else {
-                    console.log('⚠️ pdf-parse extraiu pouco texto, tentando OCR...');
-                }
-            } catch (pdfError) {
-                console.log('⚠️ pdf-parse falhou, tentando OCR...', pdfError.message);
-            }
-            
-            // Segunda tentativa: OCR (para PDFs com imagens)
-            console.log('🖼️ Usando OCR (Tesseract) para extrair texto do PDF...');
+            // Obter worker reutilizável
             const worker = await this.getWorker();
+            
+            console.log('🖼️ Usando OCR (Tesseract) para extrair texto do PDF...');
             
             const { data: { text } } = await worker.recognize(buffer, {
                 rotateAuto: true
             });
             
             const extractedText = text.trim();
-            console.log(`✅ Texto extraído com OCR: ${extractedText.length} caracteres`);
+            console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
             
             if (extractedText.length < 10) {
                 console.log('⚠️ Pouco texto extraído do PDF, mas continuando com análise...');
@@ -175,7 +158,7 @@ class FileProcessor {
                 }
             }
             
-            return `[PDF] - Erro no processamento. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
+            return `[PDF] - Erro no processamento OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
         }
     }
 
