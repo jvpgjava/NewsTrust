@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
 import { createWorker } from 'tesseract.js';
+import pdfParse from 'pdf-parse';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,23 +34,35 @@ class FileProcessor {
             try {
                 console.log('🔄 Inicializando worker OCR...');
                 
-                const options = {
-                    logger: m => {
-                        if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
-                            console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
-                        }
-                    }
-                };
-                
                 // Configurações específicas para Vercel
                 if (process.env.VERCEL) {
                     console.log('🌐 Configurando Tesseract.js para ambiente Vercel...');
-                    options.workerPath = 'https://unpkg.com/tesseract.js@4.1.1/dist/worker.min.js';
-                    options.langPath = 'https://tessdata.projectnaptha.com/4.0.0';
-                    options.corePath = 'https://unpkg.com/tesseract.js-core@4.0.4/tesseract-core.wasm.js';
+                    
+                    const options = {
+                        logger: m => {
+                            if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
+                                console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
+                            }
+                        },
+                        workerPath: 'https://unpkg.com/tesseract.js@4.1.1/dist/worker.min.js',
+                        langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+                        corePath: 'https://unpkg.com/tesseract.js-core@4.0.4/tesseract-core.wasm.js'
+                    };
+                    
+                    this.worker = await createWorker('por+eng', 1, options);
+                } else {
+                    // Configuração para desenvolvimento local
+                    const options = {
+                        logger: m => {
+                            if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
+                                console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
+                            }
+                        }
+                    };
+                    
+                    this.worker = await createWorker('por+eng', 1, options);
                 }
                 
-                this.worker = await createWorker('por+eng', 1, options);
                 console.log('✅ Worker OCR pronto!');
             } catch (error) {
                 console.error('❌ Erro ao inicializar worker OCR:', error);
@@ -100,21 +113,37 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
-            console.log('📄 Tentando processar PDF com OCR...', {
+            console.log('📄 Tentando processar PDF...', {
                 bufferSize: buffer.length
             });
             
-            // Obter worker reutilizável
-            const worker = await this.getWorker();
+            // Primeira tentativa: pdf-parse (mais rápido e confiável)
+            try {
+                console.log('📖 Tentando extrair texto com pdf-parse...');
+                const pdfData = await pdfParse(buffer);
+                const extractedText = pdfData.text.trim();
+                
+                console.log(`✅ Texto extraído com pdf-parse: ${extractedText.length} caracteres`);
+                
+                if (extractedText.length > 10) {
+                    return extractedText;
+                } else {
+                    console.log('⚠️ pdf-parse extraiu pouco texto, tentando OCR...');
+                }
+            } catch (pdfError) {
+                console.log('⚠️ pdf-parse falhou, tentando OCR...', pdfError.message);
+            }
             
+            // Segunda tentativa: OCR (para PDFs com imagens)
             console.log('🖼️ Usando OCR (Tesseract) para extrair texto do PDF...');
+            const worker = await this.getWorker();
             
             const { data: { text } } = await worker.recognize(buffer, {
                 rotateAuto: true
             });
             
             const extractedText = text.trim();
-            console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
+            console.log(`✅ Texto extraído com OCR: ${extractedText.length} caracteres`);
             
             if (extractedText.length < 10) {
                 console.log('⚠️ Pouco texto extraído do PDF, mas continuando com análise...');
@@ -146,7 +175,7 @@ class FileProcessor {
                 }
             }
             
-            return `[PDF] - Erro no processamento OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
+            return `[PDF] - Erro no processamento. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
         }
     }
 
