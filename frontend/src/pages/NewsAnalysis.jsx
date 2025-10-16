@@ -418,7 +418,7 @@ const NewsAnalysis = () => {
                         
                         {!uploadedFile ? (
                           <div 
-                            className="border border-gray-200 rounded-lg p-3 sm:p-4 text-center hover:border-gray-300 transition-colors"
+                            className="p-3 sm:p-4 text-center hover:bg-gray-50 transition-colors rounded-lg"
                             onDrop={(e) => {
                               e.preventDefault()
                               const files = e.dataTransfer.files
