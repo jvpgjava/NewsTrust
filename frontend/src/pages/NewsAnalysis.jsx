@@ -307,7 +307,7 @@ const NewsAnalysis = () => {
             Análise de Notícias
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-            Analise a credibilidade de fontes e o conteúdo de notícias
+            Verifique a credibilidade de fontes e o conteúdo de notícias
           </p>
         </div>
 
