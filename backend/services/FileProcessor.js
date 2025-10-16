@@ -38,13 +38,16 @@ class FileProcessor {
                         if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
                             console.log(`📦 ${m.status}... ${m.progress ? Math.round(m.progress * 100) + '%' : ''}`);
                         }
-                    },
-                    // Configurações específicas para Vercel
-                    ...(process.env.VERCEL && {
-                        workerPath: 'https://unpkg.com/tesseract.js@4.1.1/dist/worker.min.js',
-                        langPath: 'https://tessdata.projectnaptha.com/4.0.0'
-                    })
+                    }
                 };
+                
+                // Configurações específicas para Vercel
+                if (process.env.VERCEL) {
+                    console.log('🌐 Configurando Tesseract.js para ambiente Vercel...');
+                    options.workerPath = 'https://unpkg.com/tesseract.js@4.1.1/dist/worker.min.js';
+                    options.langPath = 'https://tessdata.projectnaptha.com/4.0.0';
+                    options.corePath = 'https://unpkg.com/tesseract.js-core@4.0.4/tesseract-core.wasm.js';
+                }
                 
                 this.worker = await createWorker('por+eng', 1, options);
                 console.log('✅ Worker OCR pronto!');
@@ -122,7 +125,28 @@ class FileProcessor {
             
         } catch (error) {
             console.error('❌ Erro ao processar PDF:', error.message);
-            return `[PDF] - Erro no processamento OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Erro: ${error.message}`;
+            
+            // Se for erro de inicialização do worker, tentar uma abordagem diferente
+            if (error.message.includes('worker script') || error.message.includes('module filename')) {
+                console.log('🔄 Tentando reinicializar worker com configuração alternativa...');
+                this.worker = null; // Reset worker
+                
+                try {
+                    const worker = await this.getWorker();
+                    const { data: { text } } = await worker.recognize(buffer, {
+                        rotateAuto: true
+                    });
+                    
+                    const extractedText = text.trim();
+                    if (extractedText.length > 10) {
+                        return extractedText;
+                    }
+                } catch (retryError) {
+                    console.error('❌ Erro na segunda tentativa:', retryError.message);
+                }
+            }
+            
+            return `[PDF] - Erro no processamento OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
         }
     }
 
@@ -161,7 +185,28 @@ class FileProcessor {
             
         } catch (error) {
             console.error('❌ Erro no processamento de imagem:', error);
-            return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Erro no OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Erro: ${error.message}`;
+            
+            // Se for erro de inicialização do worker, tentar uma abordagem diferente
+            if (error.message.includes('worker script') || error.message.includes('module filename')) {
+                console.log('🔄 Tentando reinicializar worker com configuração alternativa...');
+                this.worker = null; // Reset worker
+                
+                try {
+                    const worker = await this.getWorker();
+                    const { data: { text } } = await worker.recognize(buffer, {
+                        rotateAuto: true
+                    });
+                    
+                    const extractedText = text.trim();
+                    if (extractedText.length > 0) {
+                        return extractedText;
+                    }
+                } catch (retryError) {
+                    console.error('❌ Erro na segunda tentativa:', retryError.message);
+                }
+            }
+            
+            return `[IMAGEM ${this.getImageTypeName(mimetype).toUpperCase()}] - Erro no OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, use TXT ou DOCX.`;
         }
     }
 
