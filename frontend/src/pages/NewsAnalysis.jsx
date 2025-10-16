@@ -418,7 +418,7 @@ const NewsAnalysis = () => {
                         
                         {!uploadedFile ? (
                           <div 
-                            className="border-2 border-dashed border-blue-300 rounded-lg p-4 sm:p-6 lg:p-8 text-center hover:border-blue-400 transition-colors"
+                            className="border border-gray-200 rounded-lg p-3 sm:p-4 text-center hover:border-gray-300 transition-colors"
                             onDrop={(e) => {
                               e.preventDefault()
                               const files = e.dataTransfer.files
@@ -436,20 +436,20 @@ const NewsAnalysis = () => {
                               onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0])}
                               className="hidden"
                             />
-                            <div className="space-y-2 sm:space-y-3">
-                              <FileText className="h-8 w-8 sm:h-12 sm:w-12 text-blue-400 mx-auto" />
+                            <div className="space-y-2">
+                              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400 mx-auto" />
                               <div>
-                                <p className="text-sm sm:text-base lg:text-lg font-medium text-gray-700">
+                                <p className="text-sm font-medium text-gray-700">
                                   Arraste um arquivo aqui ou clique para selecionar
                                 </p>
-                                <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 mt-1">
                                   Suporta PDF, TXT, DOCX e imagens (JPEG, PNG, etc.) - máx. 5MB
                                 </p>
                               </div>
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base touch-manipulation"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm touch-manipulation"
                         >
                           Selecionar Arquivo
                         </button>
