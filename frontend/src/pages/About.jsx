@@ -227,8 +227,16 @@ const About = () => {
                   Sobre
                 </a>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center gap-4">
                 <span className="text-gray-700">Guilherme Lima Sarmento</span>
+                <a 
+                  href="https://www.linkedin.com/in/guilherme-sarmento-972665394" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200"
+                >
+                  Sobre
+                </a>
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-gray-700">Vinicius Martinez da Silva</span>
