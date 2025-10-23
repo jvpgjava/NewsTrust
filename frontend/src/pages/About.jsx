@@ -204,12 +204,54 @@ const About = () => {
           <div className="ml-4">
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">Desenvolvido e Pensado Por</h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3 max-w-3xl">
-              <div className="text-gray-700">João Vitor Prestes Grando</div>
-              <div className="text-gray-700">Évilyn Flores Francisco</div>
-              <div className="text-gray-700">Guilherme Lima Sarmento</div>
-              <div className="text-gray-700">Vinicius Martinez da Silva</div>
-              <div className="text-gray-700 sm:col-span-2">Rafael Ramos da Luz</div>
+            <div className="space-y-6 max-w-3xl">
+              <div className="flex items-center gap-4">
+                <span className="text-gray-700">João Vitor Prestes Grando</span>
+                <a 
+                  href="https://www.linkedin.com/in/jvprestessg" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200"
+                >
+                  Sobre
+                </a>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-gray-700">Évilyn Flores Francisco</span>
+                <a 
+                  href="https://www.linkedin.com/in/evilyn-flores" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200"
+                >
+                  Sobre
+                </a>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-700">Guilherme Lima Sarmento</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-gray-700">Vinicius Martinez da Silva</span>
+                <a 
+                  href="https://www.linkedin.com/in/vinícius-martinez-76857334a" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200"
+                >
+                  Sobre
+                </a>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-gray-700">Rafael Ramos da Luz</span>
+                <a 
+                  href="https://www.linkedin.com/in/rafael-ramos-da-luz-69772b164" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200"
+                >
+                  Sobre
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -226,8 +268,18 @@ const About = () => {
             />
           </div>
           <div className="ml-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">Orientado Por</h2>
-            <p className="text-gray-700">Arthur Marques de Oliveira</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">Orientado Por</h2>
+            <div className="flex items-center gap-4 max-w-3xl mt-8">
+              <span className="text-gray-700">Arthur Marques de Oliveira</span>
+              <a 
+                href="https://www.linkedin.com/in/arthur-marques-de-oliveira-a09072110" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200"
+              >
+                Sobre
+              </a>
+            </div>
           </div>
         </div>
       </div>
