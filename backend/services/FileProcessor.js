@@ -4,6 +4,13 @@ import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
 import { createWorker } from 'tesseract.js';
 
+// pdf-parse é CommonJS, então precisamos usar createRequire
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParseLib = require('pdf-parse');
+// pdf-parse pode ser uma função direta ou ter uma propriedade default
+const pdfParse = typeof pdfParseLib === 'function' ? pdfParseLib : (pdfParseLib.default || pdfParseLib);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -112,53 +119,40 @@ class FileProcessor {
 
     async processPdfBuffer(buffer) {
         try {
-            console.log('📄 Tentando processar PDF com OCR...', {
+            console.log('📄 Processando PDF...', {
                 bufferSize: buffer.length
             });
             
-            // Obter worker reutilizável
-            const worker = await this.getWorker();
-            
-            console.log('🖼️ Usando OCR (Tesseract) para extrair texto do PDF...');
-            
-            const { data: { text } } = await worker.recognize(buffer, {
-                rotateAuto: true
-            });
-            
-            const extractedText = text.trim();
-            console.log(`✅ Texto extraído: ${extractedText.length} caracteres`);
-            
-            if (extractedText.length < 10) {
-                console.log('⚠️ Pouco texto extraído do PDF, mas continuando com análise...');
-                return `[PDF] - Texto limitado extraído. Conteúdo: ${extractedText}`;
+            // PASSO 1: Tentar extrair texto nativo do PDF (funciona para PDFs com texto selecionável)
+            try {
+                console.log('📖 Tentando extrair texto nativo do PDF com pdf-parse...');
+                const pdfData = await pdfParse(buffer);
+                const nativeText = pdfData.text.trim();
+                
+                console.log(`✅ Texto nativo extraído: ${nativeText.length} caracteres`);
+                
+                // Se conseguiu extrair texto suficiente, usar esse
+                if (nativeText.length >= 50) {
+                    console.log('✅ Usando texto nativo do PDF');
+                    return nativeText;
+                } else {
+                    console.log('⚠️ PDF tem pouco texto nativo (possivelmente PDF escaneado), tentando OCR...');
+                }
+            } catch (nativeError) {
+                console.log('⚠️ Não foi possível extrair texto nativo (PDF escaneado?), tentando OCR...');
+                console.log('⚠️ Erro:', nativeError.message);
             }
             
-            return extractedText;
+            // PASSO 2: Se não conseguiu texto nativo, tentar OCR (mas Tesseract não lê PDFs diretamente)
+            // Para PDFs escaneados, o usuário precisa converter para imagens primeiro
+            console.log('❌ PDFs escaneados precisam ser convertidos para imagens (PNG/JPG) antes do processamento.');
+            console.log('❌ Tesseract não processa PDFs diretamente.');
+            
+            return `[PDF] - Este PDF parece ser uma imagem escaneada (sem texto selecionável). Por favor, converta o PDF para imagens PNG ou JPG e envie as imagens para análise. O Tesseract não consegue processar PDFs diretamente. Tamanho do arquivo: ${Math.round(buffer.length / 1024)}KB.`;
             
         } catch (error) {
             console.error('❌ Erro ao processar PDF:', error.message);
-            
-            // Se for erro de inicialização do worker, tentar uma abordagem diferente
-            if (error.message.includes('worker script') || error.message.includes('module filename')) {
-                console.log('🔄 Tentando reinicializar worker com configuração alternativa...');
-                this.worker = null; // Reset worker
-                
-                try {
-                    const worker = await this.getWorker();
-                    const { data: { text } } = await worker.recognize(buffer, {
-                        rotateAuto: true
-                    });
-                    
-                    const extractedText = text.trim();
-                    if (extractedText.length > 10) {
-                        return extractedText;
-                    }
-                } catch (retryError) {
-                    console.error('❌ Erro na segunda tentativa:', retryError.message);
-                }
-            }
-            
-            return `[PDF] - Erro no processamento OCR. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
+            return `[PDF] - Erro no processamento. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
         }
     }
 
@@ -241,7 +235,7 @@ class FileProcessor {
     }
 
     isValidFileSize(size) {
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 25 * 1024 * 1024; // 25MB (aumentado)
         return size <= maxSize;
     }
 

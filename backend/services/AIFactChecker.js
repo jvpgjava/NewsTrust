@@ -10,6 +10,14 @@ class AIFactChecker {
             model: 'llama-3.1-8b-instant',
             keyEnv: 'GROQ_API_KEY'
         }
+        
+        // Google Gemini - GRATUITO e aceita PDFs diretamente!
+        this.geminiConfig = {
+            url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+            keyEnv: 'GEMINI_API_KEY'
+        }
+        
+        console.log('💡 Para processar PDFs diretamente, configure GEMINI_API_KEY (gratuito!)')
     }
 
     async analyzeContent(title, content) {
@@ -338,14 +346,101 @@ Responda APENAS em formato JSON válido:
                 : 'Poucas informações encontradas na web'
         ]
 
+        const resultsCount = typeof webResults.totalResults === 'number' ? webResults.totalResults : 0
+        const resultsLabel = resultsCount === 1 ? '1 resultado' : `${resultsCount} resultados`
+
         return {
             isFakeNews,
             confidence: Math.min(0.95, Math.max(0.05, confidence)),
             riskLevel,
             reasons,
-            detailedAnalysis: `Análise com ${aiAnalysis.source}: Web (${webResults.totalResults} resultados) + IA. ${isFakeNews ? 'FAKE NEWS DETECTADA' : 'NOTÍCIA APARENTA SER REAL'}. Confiança: ${(confidence * 100).toFixed(1)}%`,
+            detailedAnalysis: `Análise com Groq: Web (${resultsLabel}) + Inteligência Artificial.`,
             recommendations: aiAnalysis.recommendations,
             score: isFakeNews ? 0.2 : 0.8
+        }
+    }
+
+    /**
+     * Analisa PDF diretamente usando Google Gemini (GRATUITO!)
+     * Gemini aceita PDFs, imagens, etc. diretamente sem precisar extrair texto primeiro
+     */
+    async analyzePDFDirectly(fileBuffer, fileName) {
+        try {
+            const apiKey = process.env.GEMINI_API_KEY
+            if (!apiKey) {
+                throw new Error('GEMINI_API_KEY não configurada. Configure em https://makersuite.google.com/app/apikey (GRATUITO!)')
+            }
+
+            console.log('🤖 Enviando PDF diretamente para Google Gemini (gratuito)...')
+            
+            // Converter buffer para base64
+            const base64Content = fileBuffer.toString('base64')
+            const mimeType = 'application/pdf'
+
+            // Gemini aceita arquivos via upload ou base64 inline
+            // Vamos usar a API com base64 inline
+            const response = await fetch(`${this.geminiConfig.url}?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            inline_data: {
+                                mime_type: mimeType,
+                                data: base64Content
+                            }
+                        }, {
+                            text: `Analise este documento PDF (${fileName}) e determine se o conteúdo parece ser fake news ou confiável. 
+
+Responda APENAS em formato JSON válido:
+{
+  "isFakeNews": true/false,
+  "confidence": 0.0-1.0,
+  "riskLevel": "baixo/medio/alto",
+  "reasons": ["razão1", "razão2"],
+  "recommendations": ["recomendação1", "recomendação2"],
+  "detailedAnalysis": "análise detalhada",
+  "extractedText": "resumo do texto extraído do PDF"
+}`
+                        }]
+                    }]
+                })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.text()
+                throw new Error(`Gemini API error: ${response.status} - ${errorData}`)
+            }
+
+            const data = await response.json()
+            
+            // Gemini retorna em data.candidates[0].content.parts[0].text
+            const geminiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+            
+            console.log('✅ Resposta do Gemini recebida')
+            
+            // Extrair texto extraído do PDF (se fornecido)
+            let extractedText = ''
+            const textMatch = geminiResponse.match(/"extractedText":\s*"([^"]+)"/)
+            if (textMatch) {
+                extractedText = textMatch[1]
+            }
+
+            // Parsear resposta JSON
+            const analysis = this.parseAIResponse(geminiResponse, 'Gemini')
+            
+            return {
+                ...analysis,
+                extractedText: extractedText || 'Texto extraído pelo Gemini',
+                source: 'Gemini',
+                method: 'direct_pdf_analysis'
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao analisar PDF com Gemini:', error)
+            throw new Error(`Erro ao analisar PDF com Gemini: ${error.message}`)
         }
     }
 }
