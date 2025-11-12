@@ -30,17 +30,31 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS para produção
 const corsOptions = {
-  origin: [
-    'https://newstrust.me',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://newstrust.me',
+      'https://www.newstrust.me',
+      'https://api.newstrust.me'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin) || origin.includes('.vercel.app') || origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Rate limiting para produção
 const limiter = rateLimit({
