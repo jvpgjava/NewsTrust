@@ -4,13 +4,6 @@ import { fileURLToPath } from 'url';
 import mammoth from 'mammoth';
 import { createWorker } from 'tesseract.js';
 
-// pdf-parse é CommonJS, então precisamos usar createRequire
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParseLib = require('pdf-parse');
-// pdf-parse pode ser uma função direta ou ter uma propriedade default
-const pdfParse = typeof pdfParseLib === 'function' ? pdfParseLib : (pdfParseLib.default || pdfParseLib);
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -118,42 +111,14 @@ class FileProcessor {
     }
 
     async processPdfBuffer(buffer) {
-        try {
-            console.log('📄 Processando PDF...', {
-                bufferSize: buffer.length
-            });
-            
-            // PASSO 1: Tentar extrair texto nativo do PDF (funciona para PDFs com texto selecionável)
-            try {
-                console.log('📖 Tentando extrair texto nativo do PDF com pdf-parse...');
-                const pdfData = await pdfParse(buffer);
-                const nativeText = pdfData.text.trim();
-                
-                console.log(`✅ Texto nativo extraído: ${nativeText.length} caracteres`);
-                
-                // Se conseguiu extrair texto suficiente, usar esse
-                if (nativeText.length >= 50) {
-                    console.log('✅ Usando texto nativo do PDF');
-                    return nativeText;
-                } else {
-                    console.log('⚠️ PDF tem pouco texto nativo (possivelmente PDF escaneado), tentando OCR...');
-                }
-            } catch (nativeError) {
-                console.log('⚠️ Não foi possível extrair texto nativo (PDF escaneado?), tentando OCR...');
-                console.log('⚠️ Erro:', nativeError.message);
-            }
-            
-            // PASSO 2: Se não conseguiu texto nativo, tentar OCR (mas Tesseract não lê PDFs diretamente)
-            // Para PDFs escaneados, o usuário precisa converter para imagens primeiro
-            console.log('❌ PDFs escaneados precisam ser convertidos para imagens (PNG/JPG) antes do processamento.');
-            console.log('❌ Tesseract não processa PDFs diretamente.');
-            
-            return `[PDF] - Este PDF parece ser uma imagem escaneada (sem texto selecionável). Por favor, converta o PDF para imagens PNG ou JPG e envie as imagens para análise. O Tesseract não consegue processar PDFs diretamente. Tamanho do arquivo: ${Math.round(buffer.length / 1024)}KB.`;
-            
-        } catch (error) {
-            console.error('❌ Erro ao processar PDF:', error.message);
-            return `[PDF] - Erro no processamento. Tamanho: ${Math.round(buffer.length / 1024)}KB. Para análise completa, converta o PDF para PNG/JPG ou use DOCX/TXT.`;
-        }
+        console.log('📄 Processando PDF...', {
+            bufferSize: buffer.length
+        });
+        
+        console.log('💡 PDFs devem ser processados pelo microserviço Go para melhor suporte');
+        console.log('💡 Use o endpoint /api/file-upload/analyze-file-microservice');
+        
+        return `[PDF] - Para processamento completo de PDFs, use o endpoint /api/file-upload/analyze-file-microservice que utiliza o microserviço Go com suporte ao Google Gemini. Tamanho do arquivo: ${Math.round(buffer.length / 1024)}KB.`;
     }
 
     async processDocxBuffer(buffer) {
